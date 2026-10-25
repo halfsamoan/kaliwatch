@@ -1,0 +1,9 @@
+{
+  "innerRadius": 220,
+  "innerChangedPixels": 0,
+  "hostClipBoundary": {
+    "changedPixels": 269,
+    "maxChannelDifference": 9
+  },
+  "note": "Resizable CSS host clip boundary is reported separately from dial information. Canonical SVG reading ROIs are checked separately."
+}

@@ -1,0 +1,69 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orbital Observatory v4 / QA</title><style>:root{color-scheme:dark}*{box-sizing:border-box}body{max-width:1000px;margin:auto;padding:35px 32px 70px;background:#101311;color:#dce5da;font:14px/1.9 'Segoe UI','Malgun Gothic',sans-serif}nav{display:flex;gap:24px;padding-bottom:23px;margin-bottom:34px;border-bottom:1px solid #354232;font-size:12px}a{color:#a6f46a;text-underline-offset:4px}h1{font-size:32px;line-height:1.4;color:#eff8ec}h2{font-size:22px;margin:42px 0 15px;color:#eff8ec}h3{font-size:17px;margin-top:28px}code{font-family:Consolas,monospace;color:#c2dea9;font-size:.95em;overflow-wrap:anywhere}pre{padding:20px;background:#1b231b;border:1px solid #354232;overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #354232;padding:12px;vertical-align:top;text-align:left;min-width:150px}th{background:#24311e}.table-scroll{overflow:auto}blockquote{border-left:2px solid #a6f46a;margin-left:0;padding-left:20px}p,li{overflow-wrap:anywhere}a:focus-visible{outline:2px solid #a6f46a;outline-offset:5px}@media(max-width:600px){body{padding:24px 20px}h1{font-size:26px}nav{gap:15px;flex-wrap:wrap}}</style><nav><a href="../index.html">← 디자인 스튜디오</a><a href="DESIGN-SYSTEM.html">설계</a><a href="QA.html">검수</a><a href="REFERENCES.html">근거</a><a href="DEBATE.html">7인 토론</a></nav><main><h1>v4 최종 검수 — Orbital Observatory</h1>
+<p>2026-10-25 / 브라우저 디자인 시스템. <strong>메인 81개 통과, 독립 최종 기술 21개 통과, JS 오류 0.</strong> 7인 토론의 범위·중단·재반박은 <code>DEBATE.html</code>에 별도로 기록했다.</p>
+<h2>확인한 결과</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>항목</th>
+<th>결과</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>공식 로고·문구</td>
+<td>원본 path·SHA256, 7개 자산의 동일 형상, INFINITY 유지</td>
+</tr>
+<tr>
+<td>정적 형태</td>
+<td>구면 광원·대기 띠·그림자·뒤/앞 고리·분리 틈. 450/225px 직접 검토</td>
+</tr>
+<tr>
+<td>정보 보호</td>
+<td>천체 배경 전용 ROI: 시간 <code>[100..344,194..270]</code>, 날짜 <code>[145..305,160..190]</code>, 브랜드 <code>[150..300,138..163]</code>에서 변화 0픽셀</td>
+</tr>
+<tr>
+<td>AOD 가림</td>
+<td>실제 후면 링을 제거해 비교해도 몸체 상반구 내부 표본 2,531픽셀 변화 0. 뒤 링 투과 없음</td>
+</tr>
+<tr>
+<td>전환</td>
+<td>재질 220ms, 앞 고리 40ms 지연+180ms, 전체 궤도 360ms. 행성 이동·회전 없음</td>
+</tr>
+<tr>
+<td>연속성</td>
+<td>0/45/90/180/270/360ms의 시간 위치·공통 SVG/행성/로고 노드 유지</td>
+</tr>
+<tr>
+<td>중단·반복</td>
+<td>중간 반전·20회 전환·Live tick·수동/OS 저감 모션·재생 예약 취소 통과</td>
+</tr>
+<tr>
+<td>파일</td>
+<td>실제 SVG/PNG·Mono 다운로드, 내장 글꼴·내부 리소스·unique ID·file:// 확인</td>
+</tr>
+<tr>
+<td>작은 화면</td>
+<td>정확한 225px, 최대 자릿수·값 없음·부족 배터리·원형 문자 경계 통과</td>
+</tr>
+<tr>
+<td>스튜디오</td>
+<td>1440/1024/768/390/320px 가로 넘침 없음. 주요 버튼 44px 이상</td>
+</tr>
+</tbody></table></div>
+<h2>픽셀 비교의 범위와 남은 차이</h2>
+<p><strong>다이얼 정보 영역 반경 220px 내부는 전환 종료와 정적 기준의 픽셀 차이가 0이다.</strong> 유동 크기 448×448 캡처의 CSS 원형 클립 경계·바깥에서는 269픽셀, 최대 RGB9의 미세한 AA 차이가 남는다. DOM·computed 속성·최종 모션은 같다. 이를 해결했다고 주장하거나 전체 이미지가 완전히 같다고 표현하지 않는다. 근거는 <code>evidence-v4/transition-pixel-comparison.json</code>과 독립 최종 검증이다.</p>
+<p>초기 전체 이미지 assertion은 <code>Error: Completed active transition pixels match static renderer</code>로 실패했다. 차이 위치를 분리해 정보 영역과 CSS 호스트 경계를 따로 기록하도록 검수를 수정했다. 격리·overflow·효과 cleanup 실험은 이 차이를 없애지 못했고, 불필요한 변경을 최종에 남기지 않았다.</p>
+<p>천체 보호 ROI를 전체 글자 포함 화면에서 비교하면, mask subtree를 제거한 뒤 글꼴 AA가 달라지는 혼동도 있었다. 실패 출력은 <code>Error: Planetary decoration changes zero pixels in time reading ROI</code>, 변화 1,171픽셀/max7로 실제 숫자 가장자리에 한정됐다. 최종 ROI 검사는 읽는 전경을 제외한 <strong>천체 배경 자체</strong>를 비교하며, 글자의 위치·노드·전환은 별도 검증한다. 진단 PNG도 보존했다. 초기 후보 B의 max137 침범과 이 AA 현상을 같은 문제로 취급하지 않는다.</p>
+<h2>AOD 이미지 분석</h2>
+<p>900px PNG를 450px로 샘플링해 원형 영역 159,068픽셀 중 비영 RGB 17,999픽셀, **11.3153%**를 얻었다. 별도 후보의 직접 450px 렌더 수치와 방법이 달라 혼용하지 않는다. 15% 디자인 참고값 아래지만 실제 패널 소비전력·번인·공식 WFF 메모리 검사·심사 통과를 뜻하지 않는다.</p>
+<h2>증거</h2>
+<ul>
+<li><code>evidence-v4/verification.json</code>: 메인 81개 결과·프레임·AOD 값</li>
+<li><code>evidence-v4/reading-rois.json</code>: 배경 ROI와 AOD 상반구 가림 검사</li>
+<li><code>evidence-v4/independent/</code>: 독립 21개 검증·프레임·Mono 산출물</li>
+<li><code>evidence-v4/debate/</code>: 7역할의 실제 수행 기록과 범위</li>
+<li><code>before-after.png</code>, <code>motion-storyboard.png</code>, <code>motion-preview.webm</code>: 실제 브라우저 렌더와 제어된 시연. 기기 성능 영상 아님</li>
+</ul>
+<p>경로는 패키지 루트 기준이다. 재실행은 서버를 켠 뒤 <code>npm run verify</code>. 이전 결과는 상위 ZIP에 보존했다.</p>
+<h2>미확인</h2>
+<p>실제 워치의 야외 가독성·밝기·전력·번인·터치·메모리·프레임 속도, APK/WFF XML·공식 validator는 미확인 또는 미수행이다. 브라우저에서의 gradient·mask가 WFF에 그대로 이식된다고 가정하지 않는다. AOD 벡터와 Active 재질을 분리해 재구현·자원 검증해야 한다.</p>
+</main></html>

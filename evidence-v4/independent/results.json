@@ -1,0 +1,283 @@
+{
+  "checks": [
+    {
+      "label": "Official dragon path is preserved",
+      "pass": true
+    },
+    {
+      "label": "Official source hash is pinned",
+      "pass": true
+    },
+    {
+      "label": "AOD hides filled material and shows skeletal planet",
+      "pass": true,
+      "data": {
+        "material": "hidden",
+        "skeleton": "visible",
+        "body": [
+          {
+            "fill": "#000000",
+            "opacity": null,
+            "strokeOpacity": ".45"
+          }
+        ]
+      }
+    },
+    {
+      "label": "AOD black sphere fill is opaque; only stroke is dimmed",
+      "pass": true,
+      "data": [
+        {
+          "fill": "#000000",
+          "opacity": null,
+          "strokeOpacity": ".45"
+        }
+      ]
+    },
+    {
+      "label": "Planet material/front-ring choreography uses 220ms and 40+180ms",
+      "pass": true,
+      "data": [
+        {
+          "id": "celestial-active",
+          "duration": 220,
+          "delay": 0
+        },
+        {
+          "id": "celestial-ambient",
+          "duration": 180,
+          "delay": 0
+        },
+        {
+          "id": "celestial-front-light",
+          "duration": 180,
+          "delay": 40
+        }
+      ]
+    },
+    {
+      "label": "Frame 0ms preserves time geometry and common planet nodes",
+      "pass": true,
+      "data": {
+        "same": true,
+        "opacity": "0",
+        "frontOpacity": "0",
+        "transform": "none"
+      }
+    },
+    {
+      "label": "Frame 90ms preserves time geometry and common planet nodes",
+      "pass": true,
+      "data": {
+        "same": true,
+        "opacity": "0.922484",
+        "frontOpacity": "0.804812",
+        "transform": "none"
+      }
+    },
+    {
+      "label": "Frame 180ms preserves time geometry and common planet nodes",
+      "pass": true,
+      "data": {
+        "same": true,
+        "opacity": "0.99892",
+        "frontOpacity": "0.997908",
+        "transform": "none"
+      }
+    },
+    {
+      "label": "Frame 360ms preserves time geometry and common planet nodes",
+      "pass": true,
+      "data": {
+        "same": true,
+        "opacity": "1",
+        "frontOpacity": "1",
+        "transform": "none"
+      }
+    },
+    {
+      "label": "Material illuminates without spatial planet motion",
+      "pass": true,
+      "data": [
+        {
+          "t": 0,
+          "opacity": "0",
+          "transform": "none"
+        },
+        {
+          "t": 90,
+          "opacity": "0.922484",
+          "transform": "none"
+        },
+        {
+          "t": 180,
+          "opacity": "0.99892",
+          "transform": "none"
+        },
+        {
+          "t": 360,
+          "opacity": "1",
+          "transform": "none"
+        }
+      ]
+    },
+    {
+      "label": "Mid-flight reversal starts from current planet opacity",
+      "pass": true,
+      "data": {
+        "before": 0.851924,
+        "after": 0.851924
+      }
+    },
+    {
+      "label": "Twenty rapid reversals converge with zero effects",
+      "pass": true
+    },
+    {
+      "label": "Settled interior pixels match static renderer; CSS outer edge differences recorded",
+      "pass": true,
+      "data": {
+        "width": 448,
+        "height": 448,
+        "pixels": 269,
+        "max": 9,
+        "innerPixels": 0,
+        "innerMax": 0,
+        "innerRadiusCSS": 220
+      }
+    },
+    {
+      "label": "Live second tick preserves planet node and in-flight material illumination",
+      "pass": true,
+      "data": {
+        "same": true,
+        "ticked": true,
+        "running": true
+      }
+    },
+    {
+      "label": "Manual reduced motion cancels material and ring effects",
+      "pass": true
+    },
+    {
+      "label": "Reduced motion cancels pending replay without auto-waking",
+      "pass": true
+    },
+    {
+      "label": "OS reduced motion changes final state immediately",
+      "pass": true
+    },
+    {
+      "label": "Standalone monochrome SVG contains every unique local resource and embedded font",
+      "pass": true,
+      "data": {
+        "duplicate": [],
+        "missing": [],
+        "external": false
+      }
+    },
+    {
+      "label": "Standalone export keeps the official dragon",
+      "pass": true
+    },
+    {
+      "label": "Offline studio completes material transition without network resources",
+      "pass": true
+    },
+    {
+      "label": "No browser JavaScript errors",
+      "pass": true,
+      "data": []
+    }
+  ],
+  "errors": [],
+  "timing": [
+    {
+      "id": "celestial-active",
+      "duration": 220,
+      "delay": 0
+    },
+    {
+      "id": "celestial-ambient",
+      "duration": 180,
+      "delay": 0
+    },
+    {
+      "id": "celestial-front-light",
+      "duration": 180,
+      "delay": 40
+    }
+  ],
+  "frames": [
+    {
+      "t": 0,
+      "same": true,
+      "opacity": "0",
+      "frontOpacity": "0",
+      "transform": "none",
+      "bounds": {
+        "x": 623.7974853515625,
+        "y": 384.4259948730469,
+        "width": 212.686279296875,
+        "height": 108.7452392578125
+      }
+    },
+    {
+      "t": 90,
+      "same": true,
+      "opacity": "0.922484",
+      "frontOpacity": "0.804812",
+      "transform": "none",
+      "bounds": {
+        "x": 623.7974853515625,
+        "y": 384.4259948730469,
+        "width": 212.686279296875,
+        "height": 108.7452392578125
+      }
+    },
+    {
+      "t": 180,
+      "same": true,
+      "opacity": "0.99892",
+      "frontOpacity": "0.997908",
+      "transform": "none",
+      "bounds": {
+        "x": 623.7974853515625,
+        "y": 384.4259948730469,
+        "width": 212.686279296875,
+        "height": 108.7452392578125
+      }
+    },
+    {
+      "t": 360,
+      "same": true,
+      "opacity": "1",
+      "frontOpacity": "1",
+      "transform": "none",
+      "bounds": {
+        "x": 623.7974853515625,
+        "y": 384.4259948730469,
+        "width": 212.686279296875,
+        "height": 108.7452392578125
+      }
+    }
+  ],
+  "continuity": {
+    "before": 0.851924,
+    "after": 0.851924
+  },
+  "pixels": {
+    "width": 448,
+    "height": 448,
+    "pixels": 269,
+    "max": 9,
+    "innerPixels": 0,
+    "innerMax": 0,
+    "innerRadiusCSS": 220
+  },
+  "live": {
+    "same": true,
+    "ticked": true,
+    "running": true
+  }
+}

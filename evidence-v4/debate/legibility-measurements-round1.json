@@ -1,0 +1,377 @@
+{
+  "A": {
+    "active": {
+      "bounds": {
+        "time": {
+          "x": 119.1875,
+          "y": 166,
+          "w": 211.625,
+          "h": 107
+        },
+        "dragon": {
+          "x": 143.2935028076172,
+          "y": 23.347963333129883,
+          "w": 162.71946716308594,
+          "h": 120.99356079101562
+        },
+        "brand-label": {
+          "x": 163.7890625,
+          "y": 140,
+          "w": 122.421875,
+          "h": 16
+        },
+        "date-layer": {
+          "x": 163.7890625,
+          "y": 163,
+          "w": 122.421875,
+          "h": 23
+        },
+        "telemetry": {
+          "x": 97,
+          "y": 266,
+          "w": 258.5078125,
+          "h": 127
+        }
+      },
+      "litPixels": 21412,
+      "dialPixels": 159068,
+      "litPercent": 13.460909799582568,
+      "roi": {
+        "time": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "date": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "dragon": {
+          "pixels": 862,
+          "maxChannelDelta": 122,
+          "meanDelta": 1.7203252032520324
+        },
+        "telemetry": {
+          "pixels": 4,
+          "maxChannelDelta": 10,
+          "meanDelta": 0.0018681318681318681
+        },
+        "exactTimeBounds": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        }
+      }
+    },
+    "ambient": {
+      "bounds": {
+        "time": {
+          "x": 119.1875,
+          "y": 166,
+          "w": 211.625,
+          "h": 107
+        },
+        "dragon": {
+          "x": 143.2935028076172,
+          "y": 23.347963333129883,
+          "w": 162.71946716308594,
+          "h": 120.99356079101562
+        },
+        "brand-label": {
+          "x": 163.7890625,
+          "y": 140,
+          "w": 122.421875,
+          "h": 16
+        },
+        "date-layer": {
+          "x": 163.7890625,
+          "y": 163,
+          "w": 122.421875,
+          "h": 23
+        },
+        "telemetry": {
+          "x": 97,
+          "y": 266,
+          "w": 258.5078125,
+          "h": 127
+        }
+      },
+      "litPixels": 13846,
+      "dialPixels": 159068,
+      "litPercent": 8.704453441295547,
+      "roi": {
+        "time": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "date": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "dragon": {
+          "pixels": 311,
+          "maxChannelDelta": 55,
+          "meanDelta": 0.1447606142728094
+        },
+        "telemetry": {
+          "pixels": 4,
+          "maxChannelDelta": 10,
+          "meanDelta": 0.0018681318681318681
+        }
+      }
+    }
+  },
+  "B": {
+    "active": {
+      "bounds": {
+        "time": {
+          "x": 119.1875,
+          "y": 166,
+          "w": 211.625,
+          "h": 107
+        },
+        "dragon": {
+          "x": 143.2935028076172,
+          "y": 23.347963333129883,
+          "w": 162.71946716308594,
+          "h": 120.99356079101562
+        },
+        "brand-label": {
+          "x": 163.7890625,
+          "y": 140,
+          "w": 122.421875,
+          "h": 16
+        },
+        "date-layer": {
+          "x": 163.7890625,
+          "y": 163,
+          "w": 122.421875,
+          "h": 23
+        },
+        "telemetry": {
+          "x": 97,
+          "y": 266,
+          "w": 258.5078125,
+          "h": 127
+        }
+      },
+      "litPixels": 32741,
+      "dialPixels": 159068,
+      "litPercent": 20.58302109789524,
+      "roi": {
+        "time": {
+          "pixels": 644,
+          "maxChannelDelta": 137,
+          "meanDelta": 1.9805867126833476
+        },
+        "date": {
+          "pixels": 536,
+          "maxChannelDelta": 42,
+          "meanDelta": 1.4495833333333332
+        },
+        "dragon": {
+          "pixels": 374,
+          "maxChannelDelta": 61,
+          "meanDelta": 0.5065040650406504
+        },
+        "telemetry": {
+          "pixels": 4,
+          "maxChannelDelta": 10,
+          "meanDelta": 0.0018681318681318681
+        },
+        "exactTimeBounds": {
+          "pixels": 1698,
+          "maxChannelDelta": 116,
+          "meanDelta": 3.110121671662846
+        }
+      }
+    },
+    "ambient": {
+      "bounds": {
+        "time": {
+          "x": 119.1875,
+          "y": 166,
+          "w": 211.625,
+          "h": 107
+        },
+        "dragon": {
+          "x": 143.2935028076172,
+          "y": 23.347963333129883,
+          "w": 162.71946716308594,
+          "h": 120.99356079101562
+        },
+        "brand-label": {
+          "x": 163.7890625,
+          "y": 140,
+          "w": 122.421875,
+          "h": 16
+        },
+        "date-layer": {
+          "x": 163.7890625,
+          "y": 163,
+          "w": 122.421875,
+          "h": 23
+        },
+        "telemetry": {
+          "x": 97,
+          "y": 266,
+          "w": 258.5078125,
+          "h": 127
+        }
+      },
+      "litPixels": 15334,
+      "dialPixels": 159068,
+      "litPercent": 9.639902431664446,
+      "roi": {
+        "time": {
+          "pixels": 175,
+          "maxChannelDelta": 87,
+          "meanDelta": 0.21688955996548748
+        },
+        "date": {
+          "pixels": 7,
+          "maxChannelDelta": 2,
+          "meanDelta": 0.0016666666666666668
+        },
+        "dragon": {
+          "pixels": 124,
+          "maxChannelDelta": 28,
+          "meanDelta": 0.04141824751580849
+        },
+        "telemetry": {
+          "pixels": 4,
+          "maxChannelDelta": 10,
+          "meanDelta": 0.0018681318681318681
+        }
+      }
+    }
+  },
+  "C": {
+    "active": {
+      "bounds": {
+        "time": {
+          "x": 119.1875,
+          "y": 166,
+          "w": 211.625,
+          "h": 107
+        },
+        "dragon": {
+          "x": 143.2935028076172,
+          "y": 23.347963333129883,
+          "w": 162.71946716308594,
+          "h": 120.99356079101562
+        },
+        "brand-label": {
+          "x": 163.7890625,
+          "y": 140,
+          "w": 122.421875,
+          "h": 16
+        },
+        "date-layer": {
+          "x": 163.7890625,
+          "y": 163,
+          "w": 122.421875,
+          "h": 23
+        },
+        "telemetry": {
+          "x": 97,
+          "y": 266,
+          "w": 258.5078125,
+          "h": 127
+        }
+      },
+      "litPixels": 21851,
+      "dialPixels": 159068,
+      "litPercent": 13.73689239821963,
+      "roi": {
+        "time": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "date": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "dragon": {
+          "pixels": 337,
+          "maxChannelDelta": 125,
+          "meanDelta": 0.6599819331526648
+        },
+        "telemetry": {
+          "pixels": 4,
+          "maxChannelDelta": 10,
+          "meanDelta": 0.0018681318681318681
+        },
+        "exactTimeBounds": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        }
+      }
+    },
+    "ambient": {
+      "bounds": {
+        "time": {
+          "x": 119.1875,
+          "y": 166,
+          "w": 211.625,
+          "h": 107
+        },
+        "dragon": {
+          "x": 143.2935028076172,
+          "y": 23.347963333129883,
+          "w": 162.71946716308594,
+          "h": 120.99356079101562
+        },
+        "brand-label": {
+          "x": 163.7890625,
+          "y": 140,
+          "w": 122.421875,
+          "h": 16
+        },
+        "date-layer": {
+          "x": 163.7890625,
+          "y": 163,
+          "w": 122.421875,
+          "h": 23
+        },
+        "telemetry": {
+          "x": 97,
+          "y": 266,
+          "w": 258.5078125,
+          "h": 127
+        }
+      },
+      "litPixels": 13977,
+      "dialPixels": 159068,
+      "litPercent": 8.78680815751754,
+      "roi": {
+        "time": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "date": {
+          "pixels": 0,
+          "maxChannelDelta": 0,
+          "meanDelta": 0
+        },
+        "dragon": {
+          "pixels": 335,
+          "maxChannelDelta": 75,
+          "meanDelta": 0.19887082204155374
+        },
+        "telemetry": {
+          "pixels": 4,
+          "maxChannelDelta": 10,
+          "meanDelta": 0.0018681318681318681
+        }
+      }
+    }
+  }
+}

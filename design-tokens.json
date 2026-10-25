@@ -1,0 +1,53 @@
+{
+  "name": "KALI — Orbital Observatory",
+  "version": "4.0.0",
+  "canvas": 450,
+  "color": {
+    "black": "#000000",
+    "phosphor": "#A6F46A",
+    "white": "#EFF8EC",
+    "secondary": "#9BAB9C",
+    "dim": "#34543C",
+    "track": "#17291D",
+    "warning": "#F3C479",
+    "ambient": "#11200F",
+    "ambientStroke": "#91AD80",
+    "ambientDragon": "#718D61",
+    "ambientSecondary": "#7F9472",
+    "starlight": "#8CA6B5",
+    "celestialRim": "#506E7B",
+    "celestialShade": "#081419"
+  },
+  "typography": {
+    "family": "OrbitMono",
+    "time": 78,
+    "value": 27,
+    "date": 17,
+    "label": 15,
+    "signature": 13
+  },
+  "geometry": {
+    "center": 225,
+    "orbitRadius": 192,
+    "tickOuterRadius": 211,
+    "safeTextRadius": 171
+  },
+  "motion": {
+    "ease": "cubic-bezier(0.22,1,0.36,1)",
+    "wakeMs": 360,
+    "settleMs": 220,
+    "ambientEnterMs": 180,
+    "ambientExitMs": 360,
+    "telemetryMs": 220,
+    "telemetryDelayMs": 80,
+    "loops": false,
+    "secondsCadenceMs": 1000,
+    "ambientCadenceMs": 60000
+  },
+  "sample": {
+    "time": "10:08:24",
+    "date": "2026-10-25",
+    "battery": 78,
+    "steps": 6240
+  }
+}

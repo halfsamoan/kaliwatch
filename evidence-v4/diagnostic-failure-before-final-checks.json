@@ -1,0 +1,298 @@
+{
+  "checks": [
+    {
+      "name": "Studio renders one root SVG",
+      "result": "PASS"
+    },
+    {
+      "name": "Cosmic field contains 20 fixed decorative stars",
+      "result": "PASS"
+    },
+    {
+      "name": "Active terminal uses INFINITY instead of ready",
+      "result": "PASS"
+    },
+    {
+      "name": "Displayed dragon path exactly matches official Kali original",
+      "result": "PASS"
+    },
+    {
+      "name": "Official raw SVG SHA256 matches pinned source",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD time uses a visible outline",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD signature displays INFINITY",
+      "result": "PASS"
+    },
+    {
+      "name": "Star field stays identical between active and AOD",
+      "result": "PASS"
+    },
+    {
+      "name": "Official dragon remains visible in AOD",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD hides seconds and active orbit",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD hides optional telemetry",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD shows stationary segmented orbit",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD has no continuous animation",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD hides the textured planetary surface",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD retains the matching planetary silhouette",
+      "result": "PASS"
+    },
+    {
+      "name": "Orbit reveal lasts 360ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Planetary material illuminates in 220ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Front ring follows after 40ms and settles in 180ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Planet has no flight or spin animation",
+      "result": "PASS"
+    },
+    {
+      "name": "Telemetry enters after 80ms and settles in 220ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Time geometry stays fixed at 0ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Time geometry stays fixed at 45ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Time geometry stays fixed at 90ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Time geometry stays fixed at 180ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Time geometry stays fixed at 270ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Time geometry stays fixed at 360ms",
+      "result": "PASS"
+    },
+    {
+      "name": "SVG, time and official dragon keep the same DOM identity",
+      "result": "PASS"
+    },
+    {
+      "name": "Planetary layers retain their DOM nodes across the transition",
+      "result": "PASS"
+    },
+    {
+      "name": "Completed transition matches static pixels throughout the dial information area",
+      "result": "PASS"
+    },
+    {
+      "name": "Interrupted orbit opacity retargets without a jump",
+      "result": "PASS"
+    },
+    {
+      "name": "Twenty rapid reversals converge to active with zero effects",
+      "result": "PASS"
+    },
+    {
+      "name": "Reduced motion cancels the pending replay and running effects",
+      "result": "PASS"
+    },
+    {
+      "name": "Reduced motion disables replay button",
+      "result": "PASS"
+    },
+    {
+      "name": "Reduced motion changes state immediately",
+      "result": "PASS"
+    },
+    {
+      "name": "OS reduced motion is respected",
+      "result": "PASS"
+    },
+    {
+      "name": "Manual AOD selection cancels a pending replay",
+      "result": "PASS"
+    },
+    {
+      "name": "Replay works from AOD and ends in active",
+      "result": "PASS"
+    },
+    {
+      "name": "10% review stretches reveal to exactly 3600ms",
+      "result": "PASS"
+    },
+    {
+      "name": "Reduced motion interrupts an in-flight slow reveal",
+      "result": "PASS"
+    },
+    {
+      "name": "A real live-clock tick preserves transition nodes and running effects",
+      "result": "PASS"
+    },
+    {
+      "name": "Offscreen live clock stops",
+      "result": "PASS"
+    },
+    {
+      "name": "Onscreen live clock resumes",
+      "result": "PASS"
+    },
+    {
+      "name": "Live toggle off cancels timer",
+      "result": "PASS"
+    },
+    {
+      "name": "Null telemetry remains explicit",
+      "result": "PASS"
+    },
+    {
+      "name": "Small review mode is exactly 225 CSS pixels",
+      "result": "PASS"
+    },
+    {
+      "name": "Low battery keeps amber plus numeric percentage",
+      "result": "PASS"
+    },
+    {
+      "name": "export-svg emits a real file",
+      "result": "PASS"
+    },
+    {
+      "name": "export-png emits a real file",
+      "result": "PASS"
+    },
+    {
+      "name": "1440px layout has no horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "name": "1440px controls maintain 44px button height",
+      "result": "PASS"
+    },
+    {
+      "name": "1024px layout has no horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "name": "1024px controls maintain 44px button height",
+      "result": "PASS"
+    },
+    {
+      "name": "768px layout has no horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "name": "768px controls maintain 44px button height",
+      "result": "PASS"
+    },
+    {
+      "name": "390px layout has no horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "name": "390px controls maintain 44px button height",
+      "result": "PASS"
+    },
+    {
+      "name": "320px layout has no horizontal overflow",
+      "result": "PASS"
+    },
+    {
+      "name": "320px controls maintain 44px button height",
+      "result": "PASS"
+    },
+    {
+      "name": "active: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "active: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "ambient: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "ambient: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "monochrome: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "monochrome: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "background-only: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "background-only: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "low-battery: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "low-battery: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "no-data: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "no-data: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "max-digits: text boxes stay inside circular boundary",
+      "result": "PASS"
+    },
+    {
+      "name": "max-digits: exported dragon keeps official geometry",
+      "result": "PASS"
+    },
+    {
+      "name": "AOD raster remains below 15% lit pixels",
+      "result": "PASS"
+    }
+  ],
+  "errors": [],
+  "error": "Error: Planetary decoration changes zero pixels in time reading ROI\n    at assert (C:\\Users\\k\\Documents\\Codex\\2026-10-25\\kali-arch-halfsamoan-repo-x20\\outputs\\kali-orbit\\tools\\verify-v4.cjs:7:37)\n    at C:\\Users\\k\\Documents\\Codex\\2026-10-25\\kali-arch-halfsamoan-repo-x20\\outputs\\kali-orbit\\tools\\verify-v4.cjs:147:153"
+}

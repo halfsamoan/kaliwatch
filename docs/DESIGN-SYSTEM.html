@@ -1,0 +1,215 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Orbital Observatory v4 / DESIGN-SYSTEM</title><style>:root{color-scheme:dark}*{box-sizing:border-box}body{max-width:1000px;margin:auto;padding:35px 32px 70px;background:#101311;color:#dce5da;font:14px/1.9 'Segoe UI','Malgun Gothic',sans-serif}nav{display:flex;gap:24px;padding-bottom:23px;margin-bottom:34px;border-bottom:1px solid #354232;font-size:12px}a{color:#a6f46a;text-underline-offset:4px}h1{font-size:32px;line-height:1.4;color:#eff8ec}h2{font-size:22px;margin:42px 0 15px;color:#eff8ec}h3{font-size:17px;margin-top:28px}code{font-family:Consolas,monospace;color:#c2dea9;font-size:.95em;overflow-wrap:anywhere}pre{padding:20px;background:#1b231b;border:1px solid #354232;overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}td,th{border:1px solid #354232;padding:12px;vertical-align:top;text-align:left;min-width:150px}th{background:#24311e}.table-scroll{overflow:auto}blockquote{border-left:2px solid #a6f46a;margin-left:0;padding-left:20px}p,li{overflow-wrap:anywhere}a:focus-visible{outline:2px solid #a6f46a;outline-offset:5px}@media(max-width:600px){body{padding:24px 20px}h1{font-size:26px}nav{gap:15px;flex-wrap:wrap}}</style><nav><a href="../index.html">← 디자인 스튜디오</a><a href="DESIGN-SYSTEM.html">설계</a><a href="QA.html">검수</a><a href="REFERENCES.html">근거</a><a href="DEBATE.html">7인 토론</a></nav><main><h1>Orbital Observatory v4 — 드래곤과 우주 관측창</h1>
+<p>버전 4.0.0 / 2026-10-25. 이번 결과물은 원형 Galaxy Watch용 <strong>브라우저 디자인 시스템</strong>이며 APK·WFF 구현이 아니다. v1·v2·v3는 상위 폴더의 각 ZIP에 보존했다.</p>
+<h2>v4 현재 계약 — Orbital Observatory</h2>
+<p>7인 토론의 결론과 반박은 <code>DEBATE.html</code>에 있다. 작은 초승달·타원 아이콘을 폐기하고, 우측 화면 밖의 큰 구체를 일부만 보는 구도로 바꿨다. 아래 v3/v2 항목은 계승한 시스템의 이력이며, 충돌 시 이 v4 계약을 따른다.</p>
+<ul>
+<li>원자료 <code>celestial.js</code>: 중심 <code>(458,102)</code>, r126, 기울기 -26°. 실제 천체 시뮬레이션이 아닌 독자 SVG.</li>
+<li>정적 레이어: 뒤 링 → 구면 광원·대기 띠·그림자 → 앞 링. 3개 주 면 띠와 분리 틈, 18개 미세 선.</li>
+<li>구체·림 mask는 x320→338, 고리는 x345→372로 각각 감쇠한다. 재질 .59. 전체를 어둡게 해 곡률까지 지우지 않는다.</li>
+<li>Active 재질 220ms, 앞 고리 40ms 지연+180ms. 행성의 위치·기울기 고정, 추가 회전·비행·무한 반짝임 없음.</li>
+<li>AOD 몸체는 opaque black으로 뒤 링을 가린다. stroke만 .45. 같은 곡률의 림·앞 고리는 남기고 채운 재질을 숨긴다.</li>
+<li>시간·날짜·브랜드의 보호 배경 ROI는 장식 변화 0. 구체 상반구 2,531픽셀에서 뒤 링 제거 전후 변화 0.</li>
+<li>공식 드래곤 path, INFINITY, 숫자 기준선, 기존 360ms 궤도 정렬·Live tick·중간 반전·저감 모션은 유지한다.</li>
+<li>최종 AOD 비영 RGB는 같은 900→450 샘플링으로 약11.32%. 실제 전력·WFF 지원 검증이 아니다.</li>
+</ul>
+<p><code>celestial-active</code>, <code>celestial-ambient</code>, <code>celestial-front-light</code>는 공통 DOM에서 opacity를 전환한다. SVG gradient·mask는 브라우저의 재질 표현이며 WFF 지원으로 과장하지 않는다. 이식 시 Active 재질 자산과 AOD 벡터를 분리해 재구현하고 공식 자원·메모리 검사를 수행한다. 원형 CSS 호스트 경계의 미세 AA 차이는 QA에 남겼다.</p>
+<h2>계승 이력: v3 — Cosmic / INFINITY</h2>
+<p>공식 드래곤과 초록색 위계는 유지한다. 바깥 여백에 고정된 별 20개, 작은 십자 별빛 2개, 어두운 청록색 고리 행성을 배치했다. 실제 천문 데이터나 별자리 지도가 아닌 독자 장식이다. 새 반복 모션은 없고 Active와 AOD에서 같은 형태를 유지한다. <code>starlight #8CA6B5</code>, <code>celestialRim #506E7B</code>, <code>celestialShade #081419</code>는 주변 장식에만 사용한다.</p>
+<p>Active 하단은 <code>kali@orbit:~$ INFINITY</code>, AOD의 하단 서명도 <code>INFINITY</code>다. 시간·공식 드래곤·360ms 복귀 구조는 유지했다. v1·v2 ZIP은 상위 outputs 폴더에 보존했다.</p>
+<h2>기존 v2에서 이어받은 디자인 결정</h2>
+<p>사용자 요청에 따라 임의로 그렸던 작은 용을 없애고 <strong>Kali 공식 Press Pack의 실제 드래곤</strong>을 사용한다. AOD에도 같은 드래곤과 윤곽형 시각, 정지된 분절 궤도를 남긴다. Active 복귀에서는 화면을 새로 끼워 넣지 않고 같은 시각·드래곤 노드가 그 자리에서 밝아진다. 궤도가 14도 정렬되며 상태값이 뒤따른다.</p>
+<p>시간은 처음부터 읽을 수 있다. 시·분을 이동·확대·축소하지 않는다. AOD에서 초 마커·걸음 수·게이지·프롬프트는 비표시하며, 반복 스캔이나 무한 맥동은 없다.</p>
+<h2>공식 드래곤 자산</h2>
+<ul>
+<li>원자료: <a href="https://gitlab.com/kalilinux/documentation/press-pack/-/raw/360c018b5cf65179ad3883d393b8ccbdfa674bc7/Kali/Logomark/kali-dragon-white.svg">Kali 공식 Press Pack</a></li>
+<li>원본 바이트: <code>brand/kali-dragon-original.svg</code></li>
+<li>원본 SHA-256: <code>7f1dffb8c5da8e0e889c490d7530ac297979587598a49462c6a6076e721331ed</code></li>
+<li><code>dragon-data.js</code>의 path d는 원본과 완전히 같다. 단색 fill만 <code>currentColor</code>로 치환했다. 좌표를 다시 그리거나 단순화하지 않았다.</li>
+<li>원본 출처·고정 commit·재생성 도구·브랜드 고지는 <code>brand/PROVENANCE.md</code> 참조.</li>
+</ul>
+<p>개인 디자인 프로토타입이다. Kali Linux™와 드래곤은 OffSec의 상표이며 공식·승인 제품이라고 주장하지 않는다.</p>
+<h2>파일 책임과 데이터</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>파일</th>
+<th>책임</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tokens.js</code></td>
+<td>색·타이포·좌표·모션 원자료. <code>design-tokens.json</code> 생성</td>
+</tr>
+<tr>
+<td><code>dragon-data.js</code></td>
+<td>공식 원형상과 출처, Node·브라우저 공용 데이터</td>
+</tr>
+<tr>
+<td><code>face.js</code></td>
+<td>동일 입력에서 동일 SVG 생성. Active/AOD 공통 DOM 구조</td>
+</tr>
+<tr>
+<td><code>studio.js</code></td>
+<td>상태 전환·DOM 속성 갱신·WAAPI·시계 예약·내보내기</td>
+</tr>
+<tr>
+<td><code>build-assets.cjs</code></td>
+<td>자체 포함 글꼴 SVG 7종과 JSON 생성</td>
+</tr>
+<tr>
+<td><code>tools/verify.cjs</code></td>
+<td>v2 검수 진입점. <code>verify-v2.cjs</code> 실행</td>
+</tr>
+</tbody></table></div>
+<p>CDN·외부 JS·센서 연결은 없다. 배터리·걸음 수는 항상 시연 값이다. 현재 시각 토글도 컴퓨터의 로컬 시간·날짜만 읽는다. 값이 없으면 <code>—</code>를 표시하고 0으로 꾸미지 않는다.</p>
+<pre><code class="language-js">OrbitFace.render({
+  mode: &#39;ambient&#39;,        // &#39;active&#39; | &#39;ambient&#39;
+  time: &#39;10:08:24&#39;,       // HH:mm[:ss], 24시간제
+  date: &#39;2026-10-25&#39;,     // 유효한 YYYY-MM-DD
+  battery: 78,           // 0..100 또는 null
+  steps: 6240,           // 0..99999 또는 null
+  monochrome: false,
+  guides: false
+});
+</code></pre>
+<p>이 정규화는 디자인용이며 실제 센서·권한·시간대·입력 검증 계층이 아니다. 월·요일은 영어 약자로 고정했다. 걸음 게이지의 10,000 목표도 시연용이다.</p>
+<h2>색·타이포·좌표</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>역할</th>
+<th>값</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>바탕 / Active 시각</td>
+<td><code>#000000</code> / <code>#EFF8EC</code></td>
+</tr>
+<tr>
+<td>Phosphor / Mono</td>
+<td><code>#A6F46A</code> / <code>#DCE5DA</code></td>
+</tr>
+<tr>
+<td>보조 글자 / 구조 / 트랙</td>
+<td><code>#9BAB9C</code> / <code>#34543C</code> / <code>#17291D</code></td>
+</tr>
+<tr>
+<td>부족 배터리</td>
+<td><code>#F3C479</code> + 실제 표시 숫자</td>
+</tr>
+<tr>
+<td>AOD 시각 안쪽 / 윤곽</td>
+<td><code>#11200F</code> / <code>#91AD80</code></td>
+</tr>
+<tr>
+<td>AOD 드래곤 / 보조</td>
+<td><code>#718D61</code> / <code>#7F9472</code></td>
+</tr>
+</tbody></table></div>
+<p>Roboto Mono, 고정폭·tabular 숫자. 시간 78, 값 27, 날짜 17, 항목·초 15, 브랜드 12, 프롬프트 13. AOD 시각 윤곽은 1.4 정규좌표로 225px 검토 시 0.7 CSS px이다. v2 첫 안의 0.8보다 가독성을 높였다.</p>
+<p>450×450 정규좌표, 중심 <code>(225,225)</code>, 원형 클립 반지름 225. 궤도 반지름 192, 눈금 외곽 211, 검토용 안전원 171. 450은 물리 px·dp가 아니며 기기에 맞게 다시 매핑해야 한다.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>요소</th>
+<th>위치</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>공식 드래곤</td>
+<td>x135 / y24 / 180×123 프레임. 원형상 비율 유지</td>
+</tr>
+<tr>
+<td>브랜드 / 날짜</td>
+<td>중앙 x225, 기준선 y153 / y181</td>
+</tr>
+<tr>
+<td>시·분</td>
+<td>시 x166, 분 x284, 기준선 y252. 콜론 x225 / y248</td>
+</tr>
+<tr>
+<td>Active 초 / 상태</td>
+<td>초 y282, 항목 y312, 값 y343, 게이지 y357</td>
+</tr>
+<tr>
+<td>Active 프롬프트</td>
+<td>중앙 y389</td>
+</tr>
+<tr>
+<td>AOD 배터리</td>
+<td>중앙 y329, 양쪽 짧은 수평선</td>
+</tr>
+</tbody></table></div>
+<p>브랜드와 프롬프트는 장식이며 작은 글자를 필수 정보로 쓰지 않는다. 문자 바운딩박스는 원형 경계 안에 있어야 한다. 일반 안전원은 모든 요소의 강제 경계가 아니다.</p>
+<h2>모션 명세</h2>
+<p>기본 곡선 <code>cubic-bezier(.22,1,.36,1)</code>. AOD→Active는 최대 <strong>360ms</strong>, 반대 방향은 <strong>180ms</strong>다.</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>대상</th>
+<th>AOD → Active</th>
+<th>Active → AOD</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>시·분</td>
+<td>fill과 stroke-opacity 220ms. 같은 문자·좌표·크기 유지</td>
+<td>180ms에 어두운 안쪽과 윤곽 복귀</td>
+</tr>
+<tr>
+<td>드래곤</td>
+<td>color·opacity 280ms, 공간 이동 없음</td>
+<td>180ms, 낮은 밝기의 같은 실루엣</td>
+</tr>
+<tr>
+<td>Active 궤도</td>
+<td>opacity + rotate(-14°→0°), 360ms</td>
+<td>현재 opacity에서 180ms에 비표시</td>
+</tr>
+<tr>
+<td>분절 AOD 궤도</td>
+<td>220ms에 비표시</td>
+<td>180ms에 표시</td>
+</tr>
+<tr>
+<td>상태값·게이지</td>
+<td>80ms 지연 + 220ms opacity</td>
+<td>180ms에 비표시</td>
+</tr>
+<tr>
+<td>AOD 배터리</td>
+<td>120ms에 비표시</td>
+<td>180ms에 표시</td>
+</tr>
+<tr>
+<td>날짜·브랜드</td>
+<td>같은 위치에서 색·밝기만 전환</td>
+<td>같은 위치에서 색·밝기만 전환</td>
+</tr>
+</tbody></table></div>
+<p>360ms는 원주 방향을 따라 정렬되는 시그니처 전환에 한정한다. 버튼 반응이나 시간 읽기를 기다리게 하는 지연이 아니다. 공간 이동은 궤도만 맡는다. 색·fill·stroke-opacity는 실제 브라우저 페인트를 발생시킬 수 있으므로 모든 효과가 GPU 합성만으로 작동한다고 주장하지 않는다. 실기 성능은 따로 확인한다.</p>
+<p>레이어는 사라진 최종 상태에 <code>opacity=0</code>, <code>visibility=hidden</code>을 함께 둔다. 전환 중에만 WAAPI가 visibility를 visible로 유지하고, 끝나면 기본 속성으로 복귀한다. 잔여 모션·숨겨진 정보가 남지 않게 한다.</p>
+<h2>중단·반전·갱신 정책</h2>
+<ul>
+<li><strong>중간 반전:</strong> 현재 computed opacity·색·transform을 먼저 읽고 기존 효과를 취소한다. 같은 SVG 노드의 목표 속성을 바꾼 뒤 현재값에서 새 상태로 이어간다.</li>
+<li><strong>현재 시각 갱신:</strong> 노드를 교체하지 않고 바뀐 속성과 글자만 갱신한다. 1초 경계가 지나도 진행 중 전환을 취소하지 않는다.</li>
+<li><strong>AOD:</strong> 현재 시각 모드에서만 분 경계 갱신. 초·모션 반복 없음.</li>
+<li><strong>저감 모션:</strong> 수동 OR OS 설정. 즉시 최종 상태, 이동·색 전환·지연 없음. OS 선호를 수동 off로 무시할 수 없다.</li>
+<li><strong>재생 버튼:</strong> 먼저 AOD를 보여준 뒤 140ms 후 Active로 복귀시킨다. 실제 전환 부분은 360ms다. 상태 버튼·저감 모션·새 재생·렌더링 조작으로 남은 예약을 취소한다.</li>
+<li><strong>10% 검토:</strong> 디자인 모션 시간과 지연을 10배로 늘린다. 실제 배포 기본값이 아니다.</li>
+<li><strong>화면 밖 / 창 숨김:</strong> 효과·예약·시계 타이머를 멈춘다. 현재 시각 모드에서 다시 보이면 시간을 다시 읽는다.</li>
+</ul>
+<h2>WFF v4 추후 적용</h2>
+<p>현재 폴더에는 APK나 WFF XML이 없다. 브라우저 JS를 WFF 안에 넣지 않는다.</p>
+<ol>
+<li>기존 KALIWATCH의 변경 내용을 보존하고 새 테마나 별도 빌드 변형으로 추가한다. 원래 Terminal Green을 덮어쓰지 않는다.</li>
+<li>450 설계 좌표를 WFF로 매핑한다. 시간은 정적 PNG 대신 <code>DigitalClock/TimeText</code>로 만들며 실제 시간대·포맷을 따른다.</li>
+<li>공식 드래곤의 원형상을 리소스화한다. path를 임의의 용으로 대체하지 않는다. 출처와 브랜드 표시를 유지한다.</li>
+<li>AOD·Active 공통 위치를 유지한다. AOD에서 선택 정보와 초를 비표시한다. <code>Variant</code>와 지원 속성으로 설계의 시각 의도를 재현한다.</li>
+<li>WFF Variant duration은 전환 시간의 비율이다. 이 문서의 360ms나 CSS 키프레임 값을 그대로 넣지 않는다. WFF v4가 각 속성·연출을 지원하는지 확인하고 필요하면 더 단순한 도형 전환으로 매핑한다.</li>
+<li>배터리·걸음 수는 가용한 실제 데이터·컴플리케이션·권한에 연결한다. 제공되지 않으면 <code>—</code>. 시연 값을 실데이터처럼 배포하지 않는다.</li>
+<li>공식 WFF validator·메모리 검사·Gradle 빌드·에뮬레이터를 실행한다. 그 뒤 실제 워치에서 AOD↔Active 반복·손목 깨우기·밝기·번인 보호·24시간 전력을 검증한다.</li>
+</ol>
+<h2>검증 경계</h2>
+<p>AOD 래스터 발광 비율 약 11.46%는 이미지 분석값이다. 실제 소비전력·번인·프레임 속도·스토어 적합성을 증명하지 않는다. 터치·베젤·건강 데이터·12시간제·다국어 날짜·컴플리케이션 편집은 후속 구현이다. 상세 근거는 <code>QA.md</code>와 <code>REFERENCES.md</code>에 있다.</p>
+</main></html>

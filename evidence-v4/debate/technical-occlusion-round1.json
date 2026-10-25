@@ -1,0 +1,64 @@
+{
+  "cassini": {
+    "opaqueBodyDiffPixels": 995,
+    "maxChannelDiff": 11,
+    "bounds": [
+      309,
+      67,
+      390,
+      148
+    ],
+    "upperHemisphereDiff": 352,
+    "lowerHemisphereDiff": 333,
+    "rawBytes": 277048
+  },
+  "observatory": {
+    "opaqueBodyDiffPixels": 1619,
+    "maxChannelDiff": 31,
+    "bounds": [
+      331,
+      40,
+      448,
+      227
+    ],
+    "upperHemisphereDiff": 646,
+    "lowerHemisphereDiff": 705,
+    "rawBytes": 277528
+  },
+  "eclipse": {
+    "opaqueBodyDiffPixels": 1167,
+    "maxChannelDiff": 12,
+    "bounds": [
+      309,
+      63,
+      398,
+      152
+    ],
+    "upperHemisphereDiff": 416,
+    "lowerHemisphereDiff": 364,
+    "rawBytes": 258842
+  },
+  "ids": [
+    "dial-clip",
+    "cosmos",
+    "star-field",
+    "celestial-active",
+    "celestial-ambient",
+    "orbit-ambient",
+    "orbit-active",
+    "second-trail",
+    "second-marker",
+    "dragon",
+    "brand-label",
+    "date-layer",
+    "time",
+    "time-colon",
+    "telemetry",
+    "seconds",
+    "battery-value",
+    "steps-value",
+    "battery-gauge",
+    "ambient-detail",
+    "ambient-signature"
+  ]
+}

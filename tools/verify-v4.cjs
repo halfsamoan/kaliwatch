@@ -1,0 +1,174 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const runtimeRequire=name=>require(process.env.ORBIT_NODE_MODULES?path.join(process.env.ORBIT_NODE_MODULES,name):name);
+const {chromium}=runtimeRequire('playwright'),sharp=runtimeRequire('sharp');
+const base=path.resolve(__dirname,'..'),evidence=path.join(base,'evidence-v4'),url=process.env.ORBIT_URL||'http://127.0.0.1:4178';
+fs.mkdirSync(evidence,{recursive:true});
+const checks=[],errors=[];
+const assert=(v,name)=>{if(!v)throw new Error(name);checks.push({name,result:'PASS'});};
+(async()=>{
+ const browser=await chromium.launch({headless:true,...(process.env.ORBIT_CHROMIUM?{executablePath:process.env.ORBIT_CHROMIUM}:{})});
+ const page=await browser.newPage({viewport:{width:1440,height:1100},deviceScaleFactor:1});page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(url);await page.evaluate(()=>document.fonts.ready);
+ assert(await page.locator('#face>svg').count()===1,'Studio renders one root SVG');
+ const cosmicMarkup=await page.locator('#face #star-field').innerHTML();
+ assert(await page.locator('#face #star-field circle').count()===20,'Cosmic field contains 20 fixed decorative stars');
+ const terminal=await page.locator('#face #telemetry').textContent();
+ assert(terminal.includes('INFINITY')&&!/ready/i.test(terminal),'Active terminal uses INFINITY instead of ready');
+ const official=fs.readFileSync(path.join(base,'brand/kali-dragon-original.svg'),'utf8');
+ const officialD=official.match(/<path[^>]+d="([^"]+)"/)[1];
+ assert(await page.locator('#face #dragon path').getAttribute('d')===officialD,'Displayed dragon path exactly matches official Kali original');
+ assert(crypto.createHash('sha256').update(Buffer.from(official)).digest('hex')==='7f1dffb8c5da8e0e889c490d7530ac297979587598a49462c6a6076e721331ed','Official raw SVG SHA256 matches pinned source');
+ await page.evaluate(()=>{window.originalNodes={svg:document.querySelector('#face>svg'),time:document.querySelector('#face #time'),dragon:document.querySelector('#face #dragon path')};});
+ const box=()=>page.locator('#face #time').boundingBox(),initial=await box();
+ await page.locator('#ambient').click();await page.waitForTimeout(240);
+ assert(Number(await page.locator('#face #time').evaluate(e=>getComputedStyle(e).strokeOpacity))===1,'AOD time uses a visible outline');
+ assert(await page.locator('#face #ambient-signature').textContent()==='INFINITY','AOD signature displays INFINITY');
+ assert(await page.locator('#face #star-field').innerHTML()===cosmicMarkup,'Star field stays identical between active and AOD');
+ assert(Number(await page.locator('#face #dragon').evaluate(e=>getComputedStyle(e).opacity))>0,'Official dragon remains visible in AOD');
+ assert(Number(await page.locator('#face #orbit-active').evaluate(e=>getComputedStyle(e).opacity))===0,'AOD hides seconds and active orbit');
+ assert(Number(await page.locator('#face #telemetry').evaluate(e=>getComputedStyle(e).opacity))===0,'AOD hides optional telemetry');
+ assert(Number(await page.locator('#face #orbit-ambient').evaluate(e=>getComputedStyle(e).opacity))===1,'AOD shows stationary segmented orbit');
+ assert(await page.evaluate(()=>document.getAnimations().length)===0,'AOD has no continuous animation');
+ assert(await page.locator('#face #celestial-active').evaluate(e=>getComputedStyle(e).visibility)==='hidden','AOD hides the textured planetary surface');
+ assert(await page.locator('#face #celestial-ambient').evaluate(e=>getComputedStyle(e).visibility)==='visible','AOD retains the matching planetary silhouette');
+ await page.evaluate(()=>{window.planetNodes=[document.querySelector('#face #celestial-active'),document.querySelector('#face #celestial-ambient')];});
+ await page.locator('.watch-stage').screenshot({path:path.join(base,'preview-ambient.png')});
+ await page.locator('#active').click();
+ const motion=await page.evaluate(()=>document.getAnimations().map(a=>({id:a.effect.target.id,timing:a.effect.getTiming(),frames:a.effect.getKeyframes()})));
+ assert(motion.some(a=>a.id==='orbit-active'&&a.timing.duration===360),'Orbit reveal lasts 360ms');
+ assert(motion.some(a=>a.id==='celestial-active'&&a.timing.duration===220),'Planetary material illuminates in 220ms');
+ assert(motion.some(a=>a.id==='celestial-front-light'&&a.timing.duration===180&&a.timing.delay===40),'Front ring follows after 40ms and settles in 180ms');
+ assert(motion.filter(a=>a.id.startsWith('celestial')).every(a=>a.frames.every(f=>f.transform===undefined)),'Planet has no flight or spin animation');
+ assert(motion.some(a=>a.id==='telemetry'&&a.timing.delay===80&&a.timing.duration===220),'Telemetry enters after 80ms and settles in 220ms');
+ for(const t of [0,45,90,180,270,360]){
+   await page.evaluate(t=>{for(const a of document.getAnimations()){a.pause();a.currentTime=t;}},t);
+   const b=await box();assert(['x','y','width','height'].every(k=>Math.abs(b[k]-initial[k])<.1),`Time geometry stays fixed at ${t}ms`);
+   await page.locator('.watch-stage').screenshot({path:path.join(evidence,`aod-to-active-${String(t).padStart(3,'0')}ms.png`)});
+ }
+ assert(await page.evaluate(()=>originalNodes.svg===document.querySelector('#face>svg')&&originalNodes.time===document.querySelector('#face #time')&&originalNodes.dragon===document.querySelector('#face #dragon path')),'SVG, time and official dragon keep the same DOM identity');
+ assert(await page.evaluate(()=>planetNodes[0]===document.querySelector('#face #celestial-active')&&planetNodes[1]===document.querySelector('#face #celestial-ambient')),'Planetary layers retain their DOM nodes across the transition');
+ await page.evaluate(()=>OrbitStudio.cancelMotion());
+ await page.evaluate(()=>{OrbitStudio.setMode('ambient',false);OrbitStudio.setMode('active');});await page.waitForTimeout(480);
+ const settled=await page.locator('#face').screenshot();
+ await page.evaluate(()=>OrbitStudio.render());
+ const staticImage=await page.locator('#face').screenshot();
+ fs.writeFileSync(path.join(evidence,'settled-active.png'),settled);fs.writeFileSync(path.join(evidence,'static-active.png'),staticImage);
+ const beforePixels=await sharp(settled).ensureAlpha().raw().toBuffer({resolveWithObject:true}),afterPixels=await sharp(staticImage).ensureAlpha().raw().toBuffer();
+ let innerChanges=0,edgeChanges=0,edgeMax=0;
+ for(let i=0;i<afterPixels.length;i+=4){let changed=false,max=0;for(let c=0;c<4;c++){const d=Math.abs(beforePixels.data[i+c]-afterPixels[i+c]);if(d)changed=true;max=Math.max(max,d);}if(!changed)continue;const x=i/4%beforePixels.info.width,y=Math.floor(i/4/beforePixels.info.width),r=Math.hypot(x-(beforePixels.info.width-1)/2,y-(beforePixels.info.height-1)/2);if(r<220)innerChanges++;else{edgeChanges++;edgeMax=Math.max(edgeMax,max);}}
+ fs.writeFileSync(path.join(evidence,'transition-pixel-comparison.json'),JSON.stringify({innerRadius:220,innerChangedPixels:innerChanges,hostClipBoundary:{changedPixels:edgeChanges,maxChannelDifference:edgeMax},note:'Resizable CSS host clip boundary is reported separately from dial information. Canonical SVG reading ROIs are checked separately.'},null,2));
+ assert(innerChanges===0,'Completed transition matches static pixels throughout the dial information area');
+ await page.evaluate(()=>{OrbitStudio.setMode('ambient',false);OrbitStudio.setMode('active');for(const a of document.getAnimations()){a.pause();a.currentTime=80;}const el=document.querySelector('#face #orbit-active');window.retargetBefore=getComputedStyle(el).opacity;OrbitStudio.setMode('ambient');window.retargetAfter=getComputedStyle(el).opacity;});
+ const continuity=await page.evaluate(()=>[Number(retargetBefore),Number(retargetAfter)]);
+ assert(Math.abs(continuity[0]-continuity[1])<.03,'Interrupted orbit opacity retargets without a jump');
+ await page.evaluate(()=>{for(let i=0;i<20;i++)OrbitStudio.setMode(i%2?'active':'ambient');});await page.waitForTimeout(450);
+ assert(await page.evaluate(()=>OrbitStudio.diagnostics().mode==='active'&&document.getAnimations().length===0),'Twenty rapid reversals converge to active with zero effects');
+ await page.locator('#wake').click();await page.locator('#motion').check();await page.waitForTimeout(180);
+ assert(await page.evaluate(()=>OrbitStudio.diagnostics().mode==='ambient'&&!OrbitStudio.diagnostics().replayPending&&document.getAnimations().length===0),'Reduced motion cancels the pending replay and running effects');
+ assert(await page.locator('#wake').isDisabled(),'Reduced motion disables replay button');
+ await page.locator('#active').click();assert(await page.evaluate(()=>document.getAnimations().length)===0,'Reduced motion changes state immediately');
+ await page.locator('#motion').uncheck();
+ await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.getElementById('wake').disabled);
+ assert(await page.locator('#wake').isDisabled(),'OS reduced motion is respected');
+ await page.emulateMedia({reducedMotion:'no-preference'});await page.waitForFunction(()=>!document.getElementById('wake').disabled);
+ await page.locator('#wake').click();await page.locator('#ambient').click();await page.waitForTimeout(200);
+ assert(await page.evaluate(()=>OrbitStudio.state.mode==='ambient'&&!OrbitStudio.diagnostics().replayPending),'Manual AOD selection cancels a pending replay');
+ await page.locator('#wake').click();await page.waitForTimeout(550);
+ assert(await page.evaluate(()=>OrbitStudio.state.mode==='active'&&document.getAnimations().length===0),'Replay works from AOD and ends in active');
+ await page.locator('summary').click();await page.locator('#slow').check();
+ await page.locator('#ambient').click();await page.locator('#active').click();
+ assert(await page.evaluate(()=>document.getAnimations().some(a=>a.effect.target.id==='orbit-active'&&a.effect.getTiming().duration===3600)),'10% review stretches reveal to exactly 3600ms');
+ await page.locator('#motion').check();assert(await page.evaluate(()=>document.getAnimations().length)===0,'Reduced motion interrupts an in-flight slow reveal');
+ await page.locator('#motion').uncheck();await page.locator('#slow').uncheck();
+ await page.locator('#live').check();
+ const tick=await page.evaluate(async()=>{
+   OrbitStudio.setMode('ambient',false);
+   await new Promise(r=>setTimeout(r,(930-Date.now()%1000+1000)%1000));
+   OrbitStudio.setMode('active');const node=document.querySelector('#face #time'),sec=OrbitStudio.state.time;
+   await new Promise(r=>setTimeout(r,160));
+   return {same:node===document.querySelector('#face #time'),running:document.getAnimations().length>0,ticked:sec!==OrbitStudio.state.time};
+ });
+ assert(tick.ticked&&tick.same&&tick.running,'A real live-clock tick preserves transition nodes and running effects');
+ await page.waitForTimeout(260);await page.locator('footer').scrollIntoViewIfNeeded();await page.waitForFunction(()=>!OrbitStudio.diagnostics().visible);
+ assert(!(await page.evaluate(()=>OrbitStudio.diagnostics().timerScheduled)),'Offscreen live clock stops');
+ await page.locator('#face').scrollIntoViewIfNeeded();await page.waitForFunction(()=>OrbitStudio.diagnostics().visible);
+ assert(await page.evaluate(()=>OrbitStudio.diagnostics().timerScheduled),'Onscreen live clock resumes');
+ await page.locator('#live').uncheck();assert(!(await page.evaluate(()=>OrbitStudio.diagnostics().timerScheduled)),'Live toggle off cancels timer');
+ await page.locator('#data-state').selectOption('missing');assert(await page.locator('#face #battery-value').textContent()==='—'&&await page.locator('#face #steps-value').textContent()==='—','Null telemetry remains explicit');
+ await page.locator('#data-state').selectOption('long');await page.locator('#face-size').selectOption('225');
+ assert(Math.abs((await page.locator('#face').boundingBox()).width-225)<.1,'Small review mode is exactly 225 CSS pixels');
+ await page.locator('.watch-stage').screenshot({path:path.join(evidence,'225px-max-digits.png')});
+ await page.locator('#ambient').click();await page.waitForTimeout(240);await page.locator('.watch-stage').screenshot({path:path.join(evidence,'225px-aod.png')});
+ await page.locator('#active').click();await page.waitForTimeout(400);
+ await page.locator('#data-state').selectOption('low');assert(await page.locator('#face #battery-value').getAttribute('fill')==='#F3C479','Low battery keeps amber plus numeric percentage');
+ await page.locator('#data-state').selectOption('normal');await page.locator('#face-size').selectOption('450');
+ for(const [id,name]of [['export-svg','export-active.svg'],['export-png','export-active-900.png']]){
+   const pending=page.waitForEvent('download');await page.locator('#'+id).click();const download=await pending;await download.saveAs(path.join(evidence,name));
+   assert(fs.statSync(path.join(evidence,name)).size>1000,`${id} emits a real file`);
+ }
+ await page.locator('summary').click();await page.screenshot({path:path.join(base,'preview-desktop.png'),fullPage:true});
+ await page.locator('.watch-stage').screenshot({path:path.join(base,'preview-active.png')});
+ for(const width of [1440,1024,768,390,320]){
+   await page.setViewportSize({width,height:1000});await page.waitForTimeout(70);
+   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}px layout has no horizontal overflow`);
+   assert(await page.evaluate(()=>[...document.querySelectorAll('button')].filter(e=>e.checkVisibility()).every(e=>e.getBoundingClientRect().height>=44)),`${width}px controls maintain 44px button height`);
+   if(width===390)await page.screenshot({path:path.join(base,'preview-mobile.png'),fullPage:true});
+ }
+ const assetPage=await browser.newPage({viewport:{width:450,height:450},deviceScaleFactor:2});
+ const stats={};
+ for(const name of ['active','ambient','monochrome','background-only','low-battery','no-data','max-digits']){
+   const svg=fs.readFileSync(path.join(base,`assets/kali-orbit-${name}.svg`),'utf8');
+   await assetPage.setContent(`<style>body{margin:0;background:#000}svg{display:block}</style>${svg}`);await assetPage.evaluate(()=>document.fonts.ready);
+   await assetPage.screenshot({path:path.join(base,`assets/kali-orbit-${name}-900.png`)});
+   const b=await assetPage.evaluate(()=>[...document.querySelectorAll('text')].map(e=>{const b=e.getBBox();return [b.x,b.y,b.width,b.height];}));
+   assert(b.every(([x,y,w,h])=>[[x,y],[x+w,y],[x,y+h],[x+w,y+h]].every(([a,b])=>Math.hypot(a-225,b-225)<224)),`${name}: text boxes stay inside circular boundary`);
+   assert(await assetPage.locator('#dragon path').getAttribute('d')===officialD,`${name}: exported dragon keeps official geometry`);
+   stats[name]={textBoxes:b};
+ }
+ const {data,info}=await sharp(path.join(base,'assets/kali-orbit-ambient-900.png')).resize(450,450).removeAlpha().raw().toBuffer({resolveWithObject:true});let lit=0,total=0;
+ for(let y=0;y<450;y++)for(let x=0;x<450;x++){if(Math.hypot(x-224.5,y-224.5)>225)continue;total++;const i=(y*450+x)*info.channels;if(Math.max(data[i],data[i+1],data[i+2])>0)lit++;}
+ const aod={method:'450px browser-raster nonzero RGB within circular dial; not WFF/device power validation',litPixels:lit,dialPixels:total,litPercent:lit/total*100};
+ assert(aod.litPercent<15,'AOD raster remains below 15% lit pixels');
+ // Canonical pixel evidence: decorative material may not enter reading zones.
+ const currentFace=require(path.join(base,'face.js')),currentTokens=require(path.join(base,'tokens.js'));
+ const fontData=fs.readFileSync(path.join(base,'fonts/RobotoMono.ttf')).toString('base64');
+ const fixed=await browser.newPage({viewport:{width:450,height:450}});
+ const put=async mode=>{await fixed.setContent('<style>body{margin:0;background:#000}svg{display:block}</style>'+currentFace.render({mode,fontData}));await fixed.evaluate(()=>document.fonts.ready);};
+ await put('active');
+ // Measure the decorative background itself. Repainting glyphs after removing a
+ // masked SVG subtree can otherwise change text antialiasing by a few channels.
+ await fixed.evaluate(()=>{const scene=document.querySelector('svg > g[clip-path]');for(const node of [...scene.children])if(node.tagName.toLowerCase()!=='rect'&&node.id!=='cosmos')node.remove();});
+ const fullPNG=await fixed.screenshot();fs.writeFileSync(path.join(evidence,'canonical-full.png'),fullPNG);
+ const full=await sharp(fullPNG).removeAlpha().raw().toBuffer();
+ await fixed.locator('#cosmos').evaluate(e=>e.remove());
+ const cleanPNG=await fixed.screenshot();fs.writeFileSync(path.join(evidence,'canonical-no-cosmos.png'),cleanPNG);
+ const clean=await sharp(cleanPNG).removeAlpha().raw().toBuffer();
+ const readingROIs={time:[100,194,344,270],date:[145,160,305,190],brand:[150,138,300,163]};
+ const roiEvidence={};
+ for(const [name,[x1,y1,x2,y2]]of Object.entries(readingROIs)){
+   let changed=0,max=0;for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++){const i=(y*450+x)*3;let hit=false;for(let c=0;c<3;c++){const d=Math.abs(full[i+c]-clean[i+c]);if(d)hit=true;max=Math.max(max,d);}if(hit)changed++;}
+   roiEvidence[name]={changedPixels:changed,maxRGB:max};fs.writeFileSync(path.join(evidence,'roi-in-progress.json'),JSON.stringify(roiEvidence,null,2));assert(changed===0,`Planetary decoration changes zero pixels in ${name} reading ROI`);
+ }
+ await put('ambient');
+ const opaque=await sharp(await fixed.screenshot()).removeAlpha().raw().toBuffer();
+ assert(await fixed.locator('#celestial-ambient [data-sky-part="ring-back"] ellipse').count()>0,'Occlusion fixture contains real rear-ring geometry');
+ await fixed.locator('#celestial-ambient [data-sky-part="ring-back"] ellipse').evaluateAll(nodes=>nodes.forEach(n=>n.remove()));
+ const noBack=await sharp(await fixed.screenshot()).removeAlpha().raw().toBuffer();
+ let hemisphereDiff=0,sampled=0;const P=require(path.join(base,'celestial.js')).presets.observatory,ang=P.tilt*Math.PI/180;
+ for(let y=0;y<450;y++)for(let x=0;x<450;x++){
+   if(Math.hypot(x-224.5,y-224.5)>222)continue;
+   const dx=x+.5-P.cx,dy=y+.5-P.cy,lx=Math.cos(ang)*dx+Math.sin(ang)*dy,ly=-Math.sin(ang)*dx+Math.cos(ang)*dy;
+   if(Math.hypot(lx,ly)>P.r*.8||ly>-P.r*.1||x<350)continue;sampled++;
+   const i=(y*450+x)*3;if([0,1,2].some(c=>opaque[i+c]!==noBack[i+c]))hemisphereDiff++;
+ }
+ assert(sampled>50&&hemisphereDiff===0,'Opaque AOD body fully occludes rear rings in the upper hemisphere');
+ fs.writeFileSync(path.join(evidence,'reading-rois.json'),JSON.stringify({version:currentTokens.version,roiEvidence,upperHemisphere:{sampled,changedPixels:hemisphereDiff}},null,2));
+
+ const offline=await browser.newPage();offline.on('pageerror',e=>errors.push(e.message));await offline.goto('file:///'+path.join(base,'index.html').replaceAll('\\','/'));await offline.evaluate(()=>document.fonts.ready);
+ assert(await offline.locator('#face #dragon path').getAttribute('d')===officialD,'Official dragon renders offline without fetching');
+ await offline.locator('#ambient').click();await offline.locator('#active').click();await offline.waitForTimeout(400);
+ assert(await offline.evaluate(()=>OrbitStudio.state.mode==='active'&&document.getAnimations().length===0),'Offline AOD-to-active transition completes');
+ assert(errors.length===0,'Zero uncaught browser errors');
+ fs.writeFileSync(path.join(evidence,'verification.json'),JSON.stringify({version:'4.0.0',checks,errors,aod,continuity,tick,motion,stats},null,2));
+ console.log(JSON.stringify({passed:checks.length,errors,aod},null,2));await browser.close();
+})().catch(e=>{console.error(e);fs.writeFileSync(path.join(evidence,'failure.json'),JSON.stringify({checks,errors,error:e.stack},null,2));process.exit(1);});

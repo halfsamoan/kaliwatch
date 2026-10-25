@@ -1,0 +1,21 @@
+{
+  "version": "4.0.0",
+  "roiEvidence": {
+    "time": {
+      "changedPixels": 0,
+      "maxRGB": 0
+    },
+    "date": {
+      "changedPixels": 0,
+      "maxRGB": 0
+    },
+    "brand": {
+      "changedPixels": 0,
+      "maxRGB": 0
+    }
+  },
+  "upperHemisphere": {
+    "sampled": 2531,
+    "changedPixels": 0
+  }
+}

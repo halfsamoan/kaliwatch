@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KALIWATCH Celestial Vault</title>
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <main class="studio">
+    <section class="stage" aria-label="Watch face preview">
+      <div class="watch"><div id="face" class="face" role="img" aria-live="off"></div></div>
+      <p class="caption" id="caption"></p>
+    </section>
+
+    <aside class="panel" aria-label="Studio controls">
+      <header class="masthead">
+        <h1>KALIWATCH <span>Celestial Vault</span></h1>
+        <p>v5 reference studio. Main reference: JLC Master Hybris Artistica Calibre 945 Galaxia.</p>
+      </header>
+
+      <fieldset>
+        <legend>Composition</legend>
+        <select id="preset" aria-label="Composition">
+          <optgroup label="Round 6 (engineered instrument)">
+            <option value="vault5">G3 Debate vault: pole under the dragon, sub-disc at 7</option>
+          </optgroup>
+          <optgroup label="Round 3">
+            <option value="galaxia">G1 Galaxia: planet behind the dragon</option>
+            <option value="galaxia-mirror">G2 Galaxia mirrored: the photo's arrangement</option>
+          </optgroup>
+          <optgroup label="Round 1 (superseded)">
+            <option value="vault">A Vault</option>
+            <option value="pole">B Pole bridge</option>
+            <option value="window">C Planisphere window</option>
+          </optgroup>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Mode and transition</legend>
+        <div class="seg" role="group" aria-label="Display mode">
+          <button type="button" id="m-active" aria-pressed="true">Active</button>
+          <button type="button" id="m-ambient" aria-pressed="false">Always-on</button>
+        </div>
+        <div class="row">
+          <button type="button" id="wake">Replay wake</button>
+          <button type="button" id="sleep">Replay sleep</button>
+        </div>
+        <label class="check"><input type="checkbox" id="slow"> Slow motion (6x)</label>
+        <label>Motion option<select id="motion"><option value="calm">Calm — no parallax (default)</option><option value="full">Full — simulated tilt parallax</option><option value="still">Still — instant transitions</option></select></label>
+        <label class="check"><input type="checkbox" id="reduce-motion"> Reduce motion manually</label>
+        <label>Wake window <output id="window-v">360 ms</output><input type="range" id="window" min="300" max="800" value="360" step="10"></label>
+        <div id="tilt-controls"><label>Tilt X <output id="tilt-x-v">0°</output><input type="range" id="tilt-x" min="-90" max="90" value="0"></label><label>Tilt Y <output id="tilt-y-v">0°</output><input type="range" id="tilt-y" min="-90" max="90" value="0"></label><p class="hint">Preview controls; sensor calibration and power need a watch test.</p></div>
+        <p class="hint" id="motion-note"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Time in Seoul</legend>
+        <label class="check"><input type="checkbox" id="live"> Follow the clock</label>
+        <input type="datetime-local" id="when" step="1" aria-label="Date and time in Seoul">
+        <div class="row">
+          <button type="button" data-at="2027-04-16T20:08:24">M1 · canonical</button>
+          <button type="button" data-at="2026-11-20T02:00:00">M3 · planets</button>
+          <button type="button" data-at="2026-10-25T10:08:24">Morning sample</button>
+          <button type="button" data-at="2026-10-25T21:42:37">Night sample</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Watch data</legend>
+        <label>Battery <output id="bat-v"></output><input type="range" id="bat" min="0" max="100"></label>
+        <label>Steps <output id="steps-v"></output><input type="range" id="steps" min="0" max="20000" step="10"></label>
+        <label>Step goal<input id="step-goal" type="number" min="1" max="1000000" value="8000"></label>
+        <label class="check"><input type="checkbox" id="draco" checked> Draco traced in phosphor</label>
+        <label class="check"><input type="checkbox" id="guides"> Safe-radius guides</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sky right now</legend>
+        <dl class="readout" id="readout"></dl>
+      </fieldset>
+
+      <fieldset>
+        <legend>Export</legend>
+        <div class="row">
+          <button type="button" id="dl-svg">Download SVG</button>
+          <button type="button" id="dl-png">Download PNG</button>
+        </div>
+      </fieldset>
+    </aside>
+  </main>
+
+  <script src="tokens.js"></script>
+  <script src="astro.js"></script>
+  <script src="stars.js"></script>
+  <script src="stars-faint.js"></script>
+  <script src="sky.js"></script>
+  <script src="dragon-data.js"></script>
+  <script src="font-data.js"></script>
+  <script src="orbit-fonts.js"></script>
+  <script src="wff-expr.js"></script>
+  <script src="face.js"></script>
+  <script src="galaxia.js"></script>
+  <script src="vault5.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

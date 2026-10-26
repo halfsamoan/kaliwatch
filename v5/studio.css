@@ -1,0 +1,63 @@
+@font-face { font-family: OrbitMono; src: url('fonts/RobotoMono.ttf'); font-weight: 100 700; }
+@font-face { font-family: OrbitWide; src: url('fonts/MartianMono-Wide-SemiBold.ttf'); font-weight: 600; }
+@font-face { font-family: OrbitStd; src: url('fonts/MartianMono-Std-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: OrbitStd; src: url('fonts/MartianMono-Std-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: OrbitCond; src: url('fonts/MartianMono-Cond-Regular.ttf'); font-weight: 400; }
+
+:root {
+  --ink: #050806; --panel: #0A100D; --line: #1A2620; --text: #C9D6D2; --quiet: #8A9A92;
+  --phosphor: #A6F46A; --phosphor-deep: #34543C; --gold: #E2B15A;
+  --ui: system-ui, -apple-system, 'Segoe UI', sans-serif; --mono: OrbitMono, 'Roboto Mono', monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--ink); color: var(--text); font: 14px/1.45 var(--ui); }
+
+.studio { display: grid; grid-template-columns: minmax(0, 1fr) 340px; min-height: 100vh; }
+.stage { display: grid; place-items: center; align-content: center; gap: 18px; padding: 32px 16px; }
+/* The case: a dark bezel ring so the dial edge reads as glass on a watch, not a circle on a page. */
+.watch { width: min(92vw, 520px); aspect-ratio: 1; border-radius: 50%; padding: 20px;
+  background: radial-gradient(circle at 32% 28%, #2A332E, #0B0F0D 62%, #000 100%);
+  box-shadow: 0 30px 80px #000, inset 0 0 0 1px #27322C, inset 0 2px 1px #3A463F; }
+.face { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #000; }
+.face svg { width: 100%; height: 100%; display: block; }
+.caption { margin: 0; color: var(--quiet); font: 12px/1.4 var(--mono); text-align: center; max-width: 520px; }
+
+.panel { border-left: 1px solid var(--line); background: var(--panel); padding: 22px 20px 32px; overflow-y: auto; max-height: 100vh; position: sticky; top: 0; }
+.masthead h1 { margin: 0; font: 600 18px/1.2 var(--mono); color: var(--phosphor); }
+.masthead h1 span { color: var(--text); font-weight: 400; }
+.masthead p { margin: 6px 0 18px; color: var(--quiet); font-size: 12.5px; }
+
+fieldset { border: 0; border-top: 1px solid var(--line); margin: 0; padding: 14px 0 16px; display: grid; gap: 10px; }
+legend { padding: 0 0 2px; font-weight: 600; color: var(--text); }
+label { display: grid; gap: 4px; color: var(--quiet); }
+label output { color: var(--text); font-family: var(--mono); }
+.check { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.hint { margin: 0; color: var(--quiet); font-size: 12px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+select, input[type="datetime-local"], input[type="number"], button {
+  font: inherit; color: var(--text); background: #0F1713; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+select { width: 100%; }
+button { cursor: pointer; }
+input:disabled { opacity: .4; cursor: not-allowed; }
+button:hover { border-color: var(--phosphor-deep); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 2px; }
+input[type="range"] { accent-color: var(--phosphor); width: 100%; }
+input[type="checkbox"] { accent-color: var(--phosphor); width: 16px; height: 16px; }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: transparent; }
+.seg button[aria-pressed="true"] { background: #16241A; color: var(--phosphor); }
+
+.readout { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 5px 14px; font-size: 13px; }
+.readout dt { color: var(--quiet); }
+.readout dd { margin: 0; font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+.readout .ok { color: var(--phosphor); }
+.readout .warn { color: var(--gold); }
+
+@media (max-width: 860px) {
+  .studio { grid-template-columns: 1fr; }
+  .panel { border-left: 0; border-top: 1px solid var(--line); max-height: none; position: static; }
+  .stage { padding: 20px 16px; }
+}

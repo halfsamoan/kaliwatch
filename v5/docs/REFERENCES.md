@@ -92,7 +92,7 @@ The seven-lens debate ([debate/](debate/README.md)) converged on a composition d
 - The plate still reads partly as a card.
 - During wake, the AOD footprints of the globe and the sub-disc show as black discs for about 100 ms before their instruments fill in.
 
-### Round 5: G3 chosen, left flank, glass and the first instrument pass (`refs/round-5/`, current)
+### Round 5: G3 chosen, left flank, glass and the first instrument pass (`refs/round-5/`)
 On 2026-10-26 the owner chose G3 and asked for two fixes first: the parallel green arcs on the left flank and the card feel of the plate. They also asked for a far more engineered, computing-scientific face in which type, sizes and placement are never one-dimensional.
 
 **Left flank:**
@@ -136,3 +136,98 @@ On 2026-10-26 the owner chose G3 and asked for two fixes first: the parallel gre
 - The `data-tier`/`data-frame` tags and the G10–G12 gates.
 - DEC in the telemetry.
 - BSC5, the WFF expressions, the bakes, gates G5–G7, Gyro.
+
+### Round 6: the engineered instrument pass (`refs/round-6/`, current)
+Built from [CODEX-HANDOFF.md](CODEX-HANDOFF.md). Codex did most of Tasks A–C on 2026-10-26; Claude finished the gates, the telemetry register, the WFF port checks and this record on the same day. Rendered with `PRESETS=vault5,galaxia STATES=M1,M2,M3,aod:M1,aod:M6 node tools/render-refs.cjs refs/round-6 r6`.
+
+**Type (Task A).** One family, Martian Mono (OFL, `fonts/MartianMono-OFL.txt`), is cut into four static instances by `tools/build-fonts.py`. The cuts are embedded in `orbit-fonts.js` for headless renders and copied into `wff/*/res/font/`. The tiers and frames are those of the handoff tables:
+
+| Tier | Face | Size | Tracking | Frame |
+|---|---|---|---|---|
+| T0 HH:MM | OrbitWide 600, **wdth 92.5** | 66.39 px | 0 | screen |
+| T1 date line | OrbitStd 500 | 15 | 0.06 em | screen |
+| T2 ring / steps / battery | OrbitStd 500 | 13 / 20 / 15 | 0 | C, Q |
+| T3 names, months | OrbitCond 400 | 10.5 | 0.12 em | P, C |
+| T4 engraving, telemetry | OrbitCond 400 | 7.5 | 0.08 em | H, C, Q (+ raised spans) |
+| T5 prompt | OrbitStd 400 | 11.5 | 0.02 em | C |
+
+Every `<text>` carries `data-tier` and `data-frame`. The Active face uses all six tiers on all five frames: screen, C, P, H and Q. The measured T0 fit is in [round6-fonts.md](evidence/round6-fonts.md).
+
+**Instrument layer (Task B).** Every value is computed live; `verify.cjs` now recomputes them for M1–M8 independently:
+- The horizon azimuth scale and its E, W, `126.98E` and `37.57N` engravings (frame H). `horizonPt` hits the three check points to within 0.2 px.
+- The telemetry `LST hh:mm  JD nnnnnnn.nn` (frame C). LST is the WFF E1 carrier and JD is the UTC timestamp / 86400 + 2440587.5.
+- The sub-disc ticks, the `STEPS` and `BAT` arc labels, the steps value over `/8,000`, and the battery with a raised `%` (frame Q).
+- The sun's degree in its sign, raised after the sign on the date line.
+- The 5 × 9 phosphor block cursor, shown on even seconds and absent in AOD.
+
+**New in this round (Claude):**
+- **Telemetry register.** The telemetry now reads through a two-cell register: the plate's smoked sapphire (black 75 %) as an annular segment r 164.5–180, clock 146°–194.5°, that runs under the lip.
+  - Its inner facet is lit by its normal against the 315° key, like the plate's facet. A steel hairline at 173.6° divides the LST cell from the JD cell.
+  - The text baseline moved from r 171 to r 175.5, so the glyphs sit centred in the register.
+  - The register replaces the round-5 blurred "engraving bed", which read as a smudge on the Milky Way. It also keeps T4 legible wherever the Milky Way turns under it (G11).
+- **Horizon engravings.** `126.98E` and `37.57N` stand 8.6° and 8.2° from E and W (was 7.2° and 6.8°), so the line no longer reads "126.98E E".
+- **Depth (G5–G7).**
+  - The polished bead's body never drops below a lit steel (`BEAD_FLOOR`), and its foot runs from `steelLo` to `steel`.
+  - The sub-disc lip is 3 px (r 57–60). Its wall shadow is one hard 2.5 px crescent at 90 %, without the grey feather.
+  - The plate's facet bottoms out at `steelMid` at 50 %. It is still graded by its normal; there is no uniform outline.
+  - The plate's shadow follows the height model: (+3.5, +3.5), blur 1.3, 85 %.
+  - The dragon's shadow on the crescent is blur 0.4 at 100 %. The rotor's shadow on the lip is blur 0.5 at 100 %.
+
+**Gates** (`npm run verify` prints `all studio checks passed`; `npm run gates` exits 0):
+
+| Gate | Result | Target |
+|---|---|---|
+| G8 open sky / mirror difference | 36.0 % / 20.2 % | ≥ 35.5 / ≥ 15 % |
+| G1 L\* ≥ 45, minimum / median | 11.8 / 16.6 % | ≥ 8 / ≥ 15 |
+| G1 L\* ≥ 70, median | 4.1 % | ≥ 4 |
+| G1 open-sky median L\* | ≤ 13.8 | ≤ 14 |
+| G2 under the glass, median / 99th percentile L\* | 0.3 / 2.2 | ≤ 8 / ≤ 30 |
+| G3 AOD lit share / beyond r 220 | 8.04–8.26 % / 0 | ≤ 9.5 % / 0 |
+| G9 names | min 3; ≥ 4 for 98.3 % of LST; mean 6.88 | 3; 98 %; 6.5 |
+| G10 type inventory | 1044 texts over 12 builds; all tiers and frames | all tagged and matching |
+| G11 micro legibility | minimum ΔL\* 32.6 over 22 T4 texts | ≥ 25 |
+| G12 phosphor budget | 50.5 % on the dragon | ≥ 45 % |
+| Wake at 100 ms | 0 pixels inside the aperture; footprint darkening ≤ 1.12 L\* | 0; ≤ 10 |
+| G5 F2/F1, Milky Way, rotor, globe | 29.2×; 1358 px; 17 px; 49.1 % / 24.9 / 49.9 % | ≥ 8×; > 0; ≥ 12; ≥ 40 % / ≥ 8 / ≥ 40 % |
+| G5 bead / sub-disc lip | 63.3 % / ΔL\* 12.03 | ≥ 60 % / ≥ 12 |
+| G6 shadows and highlights | every offset at 135°, length error ≤ 13.1 %; every highlight at 315° (raised) or 135° (inner wall) | ±5°, ≤ 15 % (30 % rotor) |
+| G7 edges, M1–M3 | ≥ 77.6 % of samples, all edges | ≥ 60 % |
+| G7 shadows, M1–M3 | 58.4–100 % of receiver pixels | ≥ 50 % |
+
+`lit_pixels.py` on `r6-vault5-aod-M1.png` gives 6.82 %.
+
+**Deviations from the handoff, and why:**
+1. **T0 fit.** The digit ink is 55.5 px high, so the cap height is 53.1 px, not 55.5. HH ≤ 94 px was first met at wdth 102.5, but the whole time only fits the G2 box (x 123–327) at wdth **92.5**. Details are in [round6-fonts.md](evidence/round6-fonts.md).
+2. **T1 spacing.** Two Std cells (21 px) between the fields would push the line past x 140–310. The fields are separated by 7 px instead. The raised sign degree is a T4 span in the screen frame, the one screen-frame T4.
+3. **Telemetry.** The radius and the halo changed:
+   - It sits on the register at r 175.5 (the handoff gives r 171).
+   - It keeps the 0.6 px `transfer` stroke at 70 % instead of the dark 1.6 px halo, because the register is the halo. The dark halo ate the 7.5 px glyphs (G11 fell to −14.7).
+   - DEC is still omitted. In the condensed face the full line with DEC needs about 57° of arc, and only 146°–196° is clear.
+4. **Wake gate.** It now counts footprint pixels inside the r 180 aperture, and it also requires the darkening against a render without the footprints to be ≤ 10 L\*. Outside the aperture the footprints lie under the trench and F1, which are black in every frame. The literal rule failed there even with the footprints removed: 1,249 globe pixels, all outside the aperture.
+5. **G11 ring.** The 2 px ring is taken around the union of the glyph cells (`getExtentOfChar`) instead of one axis-aligned box. For text on a circle, an axis-aligned box takes in sky up to 25 px from the glyphs. Straight text gives the same ring as before. The threshold (25) is unchanged.
+6. **G7 receivers.** A receiver pixel is one the shadow contributes at least 10 % to. The contribution-mask renders leave a 1–5 % haze over thousands of pixels that no shadow can darken by 8 L\*, and that haze was what decided the old result.
+   - Plate-sky at M2 has no Milky Way cloud under the shadow, so it is reported as "no receiver". The gate still fails if no moment has a receiver.
+   - Rotor-lip receivers are small: 12–16 px at 480 px.
+7. **Plate shadow.** It is (+3.5, +3.5), blur 1.3, 85 %, instead of round 5's (+2.2, +2.2), blur 2, 50 %. G6 holds every shadow to 1.25 × height, and the plate stands 4 units above the sky.
+8. **Tried and dropped: a knockout halo behind the constellation names.** It cleaned up names crossed by figure lines, but it cost G1 (L\* ≥ 70 median 3.4–3.6 %), and WFF has no filter to match it.
+9. **Step goal.** The G3 default goal is 8,000, per the handoff (round 5 showed 10,000).
+
+**Port (Task C).**
+- **Done:**
+  - BSC5 faint stars, magnitudes 4.5–6.0, precessed, in `faintHi`. Source and licence notes are in [bsc5-provenance.md](evidence/bsc5-provenance.md).
+  - `wff-expr.js`: the studio evaluates the exact WFF expression strings ([round6-wff-expr.md](evidence/round6-wff-expr.md)).
+  - The bakes: RGBA8888 at ×1.0667, now including `instrument` (the horizon scale, the engravings and the register) and `preview`.
+  - `gen-wff.cjs`, writing the main face and the T1/T2/T9/T15 probe face.
+  - The full/calm/still motion option, and the tilt preview in the studio. The `instrument` layer now takes the same 0.035 px/° parallax as the rings, in the studio and in WFF.
+- **Checked on the PC:**
+  - `npm run check-wff` reports `check-wff: ok`. It checks nesting, the Reference chain, the Variant rules of the v4 XSD, resources and fonts.
+  - Parity, element by element, is in [round6-wff-parity.md](evidence/round6-wff-parity.md).
+  - The main face weighs 6.90 MB of bitmaps and fonts. That is above the 07 §9.1 estimate of 5.7 MB, which leaves out `rings`, `f1_gloss` and `instrument`, and far below the 100 MB limit.
+- **APK:** `tools/build-apk.sh` builds resource-only APKs without Gradle (aapt2, zipalign, apksigner and a debug key). The owner installs the Android SDK once, by hand. No APK was built, because there is no SDK on this PC.
+
+**Not done yet:**
+- Every device test, T1–T24 in [wff/DEVICE-TESTS.md](../wff/DEVICE-TESTS.md): the watch is not connected.
+  - The probe face comes first.
+  - Open risks to watch for: float32 JD precision (T7: JD could read `…12.00`), how Android applies letter spacing to the date and battery fields (T5, T6), the Gyro parallax feel and drain (T15), the cost of the per-second cursor and trail (T17), and the memory footprint (T20).
+- Constellation names still cross figure lines in a few places, and a name can sit half under the plate edge. G9 counts only names whose box is fully open, so they are not counted as readable.
+- The BSC5 dataset licence for commercial redistribution is unconfirmed (see the provenance note).

@@ -13,10 +13,22 @@
   const req = n => (typeof require !== 'undefined' ? require(n) : null);
   const T = root.VaultTokens || req('./tokens.js'), A = root.KaliAstro || req('./astro.js');
   const S = root.KaliStars || req('./stars.js'), K = root.KaliSky || req('./sky.js');
+  const Faint = root.KaliFaintStars || req('./stars-faint.js');
   const F = root.VaultFace || req('./face.js'), X = F.parts;
+  const Fonts = root.OrbitFonts || req('./orbit-fonts.js'), Expressions = root.WffExpr || req('./wff-expr.js');
   const { f, pt, P, arc, ring, dragonAt, dragonPath, MON, WD, ZOD } = X;
   const D2R = Math.PI / 180, R2D = 180 / Math.PI, W = x => x - 360 * Math.floor(x / 360);
   const smooth = (e0, e1, x) => { const t = Math.max(0, Math.min(1, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+  const TYPE = {
+    T0: ['OrbitWide', Fonts.timeSize, 600, 0],
+    T1: ['OrbitStd', 15, 500, 0.9], T2: ['OrbitStd', 13, 500, 0],
+    T3: ['OrbitCond', 10.5, 400, 1.26], T4: ['OrbitCond', 7.5, 400, 0.6],
+    T5: ['OrbitStd', 11.5, 400, 0.23]
+  };
+  function type(tier, frame, size = TYPE[tier][1]) {
+    const [family, , weight, tracking] = TYPE[tier];
+    return `data-tier="${tier}" data-frame="${frame}" font-family="${family}" font-size="${size}" font-weight="${weight}" letter-spacing="${tracking}"`;
+  }
 
   // ---------- geometry (07 sections 2 and 3, design px) ----------
   const G = {
@@ -55,6 +67,7 @@
 
   const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
   const mix = (a, b, t) => { const A0 = hex(a), B0 = hex(b); return '#' + A0.map((v, i) => Math.round(v + (B0[i] - v) * t).toString(16).padStart(2, '0')).join('').toUpperCase(); };
+  const BEAD_FLOOR = mix(V.steel, V.steelHi, 0.85); // round 6 (G5): the polished bead's darkest body tone
   function sweepAt(stops, a) { // colour at clock angle a from ascending [deg, hex] stops, wrapping at 360
     a = W(a); const s = [...stops, [stops[0][0] + 360, stops[0][1]]];
     for (let i = 0; i < s.length - 1; i++) { const [a0, c0] = s[i], [a1, c1] = s[i + 1], aa = a < a0 ? a + 360 : a; if (aa >= a0 && aa <= a1) return mix(c0, c1, (aa - a0) / (a1 - a0)); }
@@ -97,24 +110,14 @@
 
   // Solar quantities in the WFF expression form (07 section 4.9, E5 to E11), days since 2026-01-01 00:00 UT.
   function solar(date, lst) {
-    const d = (date.getTime() - Date.UTC(2026, 0, 1)) / 864e5, M = 357.282 + 0.98560028 * d;
-    const lsun = W(280.667 + 0.98564736 * d + 1.9146 * Math.sin(M * D2R) + 0.02 * Math.sin(2 * M * D2R));
-    const asun = W(lsun - 2.4657 * Math.sin(2 * lsun * D2R) + 0.0529 * Math.sin(4 * lsun * D2R)), dsun = Math.asin(0.39777 * Math.sin(lsun * D2R)) * R2D;
-    const H0 = 90 + Math.asin(Math.max(-1, Math.min(1, 0.76920 * Math.tan(dsun * D2R)))) * R2D;
-    return { d, lsun, asun, dsun, H0, E3: W(360 - lst), E4: W(180 - lst), E8: W(180 + asun - lst), sign: Math.floor(lsun / 30) };
+    return Expressions.solar(date, lst);
   }
   // Jupiter and Saturn (E13 to E16): circular Earth plus an equation of centre, beta = 0.
   function planetsAt(date) {
-    const s = solar(date, 0), d = s.d;
-    const geo = (L0, n, peri, c, a, e) => {
-      const Lp = L0 + n * d, Mp = Lp - peri, lh = Lp + c * Math.sin(Mp * D2R), r = a * (1 - e * Math.cos(Mp * D2R));
-      return W(Math.atan2(r * Math.sin(lh * D2R) + Math.sin(s.lsun * D2R), r * Math.cos(lh * D2R) + Math.cos(s.lsun * D2R)) * R2D);
-    };
-    const eq = lam => ({ ra: W(lam - 2.4657 * Math.sin(2 * lam * D2R) + 0.0529 * Math.sin(4 * lam * D2R)), dec: Math.asin(0.39777 * Math.sin(lam * D2R)) * R2D });
-    return { jupiter: eq(geo(103.430, 0.08308677, 14.73, 5.546, 5.2029, 0.0484)), saturn: eq(geo(7.807, 0.03347054, 92.60, 6.172, 9.5367, 0.0539)) };
+    return Expressions.planetsAt(date);
   }
   // Moon sprite index from [MOON_PHASE_POSITION] (E12): 0 new ... 8 full.
-  const moonSprite = age => { const p = Math.max(0, Math.min(28, Math.floor(age))); return Math.round(Math.min(p, 29.53 - p) * 0.5417); };
+  const moonSprite = age => Expressions.moonSprite(age);
 
   // ---------- the sky bake (time-invariant, cached) ----------
   // G1 remedy 1 applied (07 section 8.4): every segment below 1.0 raised by 0.15.
@@ -185,6 +188,13 @@
   const PSTAR = {}; // precessed catalogue
   for (const s of S.stars) { const [ra, dec] = precess(s.ra * 15, s.dec); PSTAR[s.id] = { ...s, raD: ra, decP: dec, p: proj(ra, dec) }; }
   const MEMBERS = new Set(Object.values(S.figures).flat(2));
+  const FAINT_STARS = Faint.stars.filter(st => !S.stars.some(bright => {
+    const dra = Math.abs(((st.raDeg - bright.ra * 15 + 540) % 360) - 180) * Math.cos(st.dec * D2R);
+    return Math.hypot(dra, st.dec - bright.dec) < 1 / 60;
+  })).map(st => {
+    const [ra, dec] = precess(st.raDeg, st.dec);
+    return { ...st, raD: ra, decP: dec, p: proj(ra, dec) };
+  }).filter(st => st.p.r <= R_SKY);
   function skyBake(u) {
     let out = `<circle r="${f(R_SKY + 4)}" fill="${V.ground}"/>` + milkyWay(u);
     // PPI graticule (radar DNA): declination circles about P and RA spokes every 2 h.
@@ -196,10 +206,7 @@
       (con === 'Dra' ? draco : plain).push(`M${f(a.p.x)} ${f(a.p.y)}L${f(b.p.x)} ${f(b.p.y)}`);
     }
     out += `<path data-layer="figures" d="${plain.join('')}" fill="none" stroke="${V.cloud}" stroke-width="1.8" stroke-linecap="round"/>`;
-    // Decorative dust in the tone of the 4.5 to 5.0 mag stars: a seeded stand-in until the BSC5 table is imported.
-    const rand = K.rng(590); let dust = '';
-    for (let i = 0; i < 590; i++) { const r = R_SKY * Math.sqrt(rand()), a = rand() * 2 * Math.PI; dust += `<circle cx="${f(r * Math.sin(a))}" cy="${f(-r * Math.cos(a))}" r="0.7"/>`; }
-    out += `<g data-layer="dust" fill="${V.faintHi}">${dust}</g>`;
+    out += `<g data-layer="faint-stars" fill="${V.faintHi}">` + FAINT_STARS.map(st => `<circle data-hr="${st.hr}" cx="${f(st.p.x)}" cy="${f(st.p.y)}" r="0.7"/>`).join('') + '</g>';
     let blooms = '', dots = '';
     for (const s of Object.values(PSTAR)) {
       if (s.p.r > R_SKY || (s.mag > 5.0 && !MEMBERS.has(s.id))) continue;
@@ -236,23 +243,33 @@
   const aboutH = ([x, y]) => Math.atan2(x - G.H[0], G.H[1] - y) * R2D; // clock angle about H
   const hArc = (r, a0, a1) => `M${P(pt(r, a0, G.H[0], G.H[1]))}A${r} ${r} 0 0 1 ${P(pt(r, a1, G.H[0], G.H[1]))}`;
   function instrument(u, ctx, sol) {
-    let ticks = ['', '', ''], defs = '', txt = '';
+    let ticks = ['', '', ''], defs = '', txt = '', beds = '';
     for (let A = 0; A < 360; A += 5) {
       const q = horizonPt(A), a = aboutH(q);
       if (Math.hypot(q[0] - 225, q[1] - 225) > 178 || (q[0] > 128 && q[0] < 322 && q[1] < 150)) continue;
       const len = A % 30 === 0 ? 5 : A % 10 === 0 ? 3.5 : 2, k = A % 30 === 0 ? 2 : A % 10 === 0 ? 1 : 0;
       ticks[k] += `M${P(pt(G.HR - 0.6, a, G.H[0], G.H[1]))}L${P(pt(G.HR - 0.6 - len, a, G.H[0], G.H[1]))}`;
     }
-    const lab = (id, text, a, span) => { defs += `<path id="${u}-${id}" d="${hArc(201.5, a - span, a + span)}"/>`; txt += `<text><textPath href="#${u}-${id}" startOffset="50%">${text}</textPath></text>`; };
+    const lab = (id, text, a, span) => { defs += `<path id="${u}-${id}" d="${hArc(201.5, a - span, a + span)}"/>`; beds += `<use href="#${u}-${id}-label"/>`; txt += `<text id="${u}-${id}-label" ${type('T4', 'H')}><textPath href="#${u}-${id}" startOffset="50%">${text}</textPath></text>`; };
     const aE = aboutH(horizonPt(90)), aW = aboutH(horizonPt(270));
-    lab('hzE', 'E', aE, 4); lab('hzW', 'W', aW, 4); lab('hzLon', '126.98E', aE - 7.2, 6.5); lab('hzLat', '37.57N', aW + 6.8, 6.5); // site, engraved beyond the E and W points
+    lab('hzE', 'E', aE, 4); lab('hzW', 'W', aW, 4); lab('hzLon', '126.98E', aE - 8.6, 6.5); lab('hzLat', '37.57N', aW + 8.2, 6.5); // site, engraved beyond the E and W points
     const hh = Math.floor(W(ctx.sky.lst) / 15), mm = Math.floor((W(ctx.sky.lst) / 15 - hh) * 60), jd = A.toJD(ctx.s.date);
     const tele = `LST ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}  JD ${jd.toFixed(2)}`;
-    defs += `<path id="${u}-tele" d="M${P(pt(171, 200))}A171 171 0 0 0 ${P(pt(171, 144))}"/>`; // centred at 172, clear of the sub-disc (197.7 to 232.5 at r 171)
+    defs += `<path id="${u}-tele" d="M${P(pt(175.5, 200))}A175.5 175.5 0 0 0 ${P(pt(175.5, 144))}"/>`; // baseline centred in the register, clear of the sub-disc (199.5 deg at r 175.5)
+    // Round 6: the telemetry reads through a two-cell register of the plate's smoked sapphire, a concentric segment that runs under the lip,
+    // so it stays legible wherever the Milky Way turns under it. Fields are centred in their cells (LST 182.7, JD 161.1 deg).
+    const fields = [[tele.slice(0, 9), 30.8], [tele.slice(11), 69.5]], [r0, r1, a0, a1, cut] = TELE_REG;
+    let facet = '';
+    for (let a = a0; a < a1; a += 2) { const w = Math.max(0, Math.cos((a + 1 - 135) * D2R)); facet += `<path d="${arc(r0, a, a + 2.05, 225, 225)}" stroke="${mix(V.steelFoot, V.steelHi, w ** 1.4)}" stroke-opacity="${f(0.35 + 0.55 * w)}"/>`; }
+    const end = (a, w) => `<path d="${line(a, r0, r1)}" stroke="${mix(V.steelFoot, V.steelHi, w)}" stroke-opacity="${f(0.35 + 0.55 * w)}"/>`;
+    const register = `<g data-gate-edge="telemetry-register"><path d="${sector(225, 225, r0, r1, a0, a1)}" fill="#000" fill-opacity="0.75"/>` +
+      `<g fill="none" stroke-width="1" stroke-linecap="round">${facet}${end(a1, 0.86)}${end(a0, 0)}<path d="${line(cut, r0 + 2.5, r1 - 2.5)}" stroke="${V.steel}" stroke-opacity="0.45" stroke-width="0.6"/></g></g>`;
     return `<defs>${defs}</defs><g stroke="${V.steel}" stroke-opacity="0.6"><path d="${ticks[0]}" stroke-width="0.8"/><path d="${ticks[1]}" stroke-width="0.8"/><path d="${ticks[2]}" stroke-width="1"/></g>` +
-      `<g font-size="7.5" letter-spacing="0.6" text-anchor="middle" fill="${V.steel}" fill-opacity="0.85">${txt}</g>` +
-      `<text font-size="7.5" letter-spacing="0.6" text-anchor="middle" fill="${V.transfer}" fill-opacity="0.75" stroke="#0B0E10" stroke-opacity="0.6" stroke-width="1.6" paint-order="stroke" xml:space="preserve"><textPath href="#${u}-tele" startOffset="50%">${tele}</textPath></text>`;
+      `<g text-anchor="middle" filter="url(#${u}-engraving-bed)">${beds}</g>` +
+      `<g text-anchor="middle" fill="${V.steel}" fill-opacity="0.75">${txt}</g>` + register +
+      fields.map(([field, offset], i) => `<text id="${u}-tele-label-${i}" ${type('T4', 'C')} text-anchor="middle" fill="${V.transfer}" fill-opacity="0.7" xml:space="preserve"><textPath href="#${u}-tele" startOffset="${offset}%">${field}</textPath></text>`).join('');
   }
+  const TELE_REG = [164.5, 180, 146, 194.5, 173.6]; // inner r, outer r (under the lip), clock span, cell divider
 
   // ---------- regions (shared with tools/gates.cjs) ----------
   const archY = x => G.plate.archC[1] - Math.sqrt(G.plate.archR ** 2 - (x - G.plate.archC[0]) ** 2);
@@ -307,27 +324,36 @@
   }
   function rotor(u, c, sec) {
     const carriage = [0, 120, 240].map(a => line(a + 6 * sec, 2.5, 9, c[0], c[1])).join('');
-    return circle([c[0] + 3, c[1] + 3], 12, `fill="#000" opacity="0.6" filter="url(#${u}-b13)"`) +
-      circle(c, 11.25, `fill="none" stroke="url(#${u}-rim)" stroke-width="1.5"`) + circle(c, 10.5, `fill="url(#${u}-bridge)"`) +
-      `<path d="${carriage}" stroke="${V.slot}" stroke-width="1.4" stroke-linecap="round"/>` + circle(c, 6.5, `fill="none" stroke="${V.foot}" stroke-width="1"`) +
-      circle(c, 1.75, `fill="${V.paper}" stroke="${V.foot}" stroke-width="0.8"`);
+    return `<g data-bake="cage_shadow" data-gate-shadow="rotor-lip">${circle([c[0] + 3, c[1] + 3], 12, `fill="#000" filter="url(#${u}-b05)"`)}</g>` +
+      `<g data-bake="cage_body">${circle(c, 11.25, `fill="none" stroke="url(#${u}-rim)" stroke-width="1.5"`) + circle(c, 10.5, `fill="url(#${u}-bridge)"`)}</g>` +
+      `<g data-live="carriage"><path d="${carriage}" stroke="${V.slot}" stroke-width="1.4" stroke-linecap="round"/>` + circle(c, 6.5, `fill="none" stroke="${V.foot}" stroke-width="1"`) +
+      circle(c, 1.75, `fill="${V.paper}" stroke="${V.foot}" stroke-width="0.8"`) + `</g>`;
   }
   function subScale(u, qx, qy) { // battery ticks every 10 % (r 47-49, 50 % to 50.5), steps ticks every 10 % of the goal, arc labels about Q
     let b = '', bb = '', st = '';
     for (let i = 0; i < 10; i++) { const a = 36 * i; (i % 5 ? (b += line(a, 47, 49, qx, qy)) : (bb += line(a, 47, 50.5, qx, qy))); st += line(a, 35, 36.8, qx, qy); }
     const lp = (id, a, span) => `<path id="${u}-${id}" d="M${P(pt(51.5, a - span, qx, qy))}A51.5 51.5 0 0 1 ${P(pt(51.5, a + span, qx, qy))}"/>`;
     return `<defs>${lp('qS', 0, 20)}${lp('qB', 90, 14)}</defs><g stroke="${V.steel}"><path d="${b}" stroke-width="0.8" stroke-opacity="0.6"/><path d="${bb}" stroke-width="1.1" stroke-opacity="0.7"/><path d="${st}" stroke-width="0.8" stroke-opacity="0.45"/></g>` +
-      `<g font-size="7.5" letter-spacing="0.6" text-anchor="middle" fill="${V.steel}" fill-opacity="0.85"><text><textPath href="#${u}-qS" startOffset="50%">STEPS</textPath></text><text><textPath href="#${u}-qB" startOffset="50%">BAT</textPath></text></g>`;
+      `<g text-anchor="middle" fill="${V.steel}" fill-opacity="0.75"><text ${type('T4', 'Q')}><textPath href="#${u}-qS" startOffset="50%">STEPS</textPath></text><text ${type('T4', 'Q')}><textPath href="#${u}-qB" startOffset="50%">BAT</textPath></text></g>`;
   }
   const ROT = a => (W(a) > 90 && W(a) < 270 ? a + 180 : a); // numerals strictly between 90 and 270 are flipped upright
-  function ringNumeral(txt, r, a, size, attrs) {
-    const [x, y] = pt(r, a); return `<text transform="translate(${f(x)} ${f(y)}) rotate(${f(ROT(a))})" y="${f(0.711 * size / 2)}" text-anchor="middle" ${attrs}>${txt}</text>`;
+  function ringNumeral(txt, r, a, size, id) {
+    r -= 0.75; // Martian's overshoot and AA must stay inside the AOD r220 limit.
+    const bottom = W(a) > 90 && W(a) < 270, radius = r + (bottom ? 1 : -1) * size * 0.4;
+    const from = a + (bottom ? 8 : -8), to = a + (bottom ? -8 : 8);
+    return `<defs><path id="${id}" d="${arc(radius, from, to)}"/></defs><text ${type('T2', 'C', size)} text-anchor="middle"><textPath href="#${id}" startOffset="50%">${txt}</textPath></text>`;
   }
   const stepsText = n => n === null ? '—' : n >= 10000 ? (Math.floor(Math.min(n, 99999) / 100) / 10).toFixed(1) + 'k' : n.toLocaleString('en-US');
+  function promptLine(u, second, aod = false) {
+    const text = `<text ${type('T5', 'C')} text-anchor="middle" xml:space="preserve"><textPath href="#${u}-prompt" startOffset="50%"><tspan fill="${V.transfer}"${aod ? ' fill-opacity="0"' : ''}>kali@vault:~$ </tspan><tspan fill="${aod ? V.aText : V.ph}">INFINITY</tspan></textPath></text>`;
+    const width = 22 * 11.5 * 0.7 + 21 * 0.23, angle = 180 - (width / 2 + 2) / 218.9 * R2D;
+    return text + (aod ? '' : `<rect data-cursor="block" x="0" y="-9" width="5" height="9" transform="translate(${P(pt(218.9, angle))}) rotate(${f(angle - 180)})" fill="${V.ph}" opacity="${second % 2 ? 0 : 1}"/>`);
+  }
   function clock(ctx, mode) {
-    const { h, m } = ctx.local, hh = String(h).padStart(2, '0'), mm = String(m).padStart(2, '0'), g = G.digits, base = `font-size="${T.type.time}" font-weight="${T.type.timeWeight}" text-anchor="middle"`;
-    if (mode === 'aod') return `<g ${base} fill="${V.aFill}" stroke="${V.aOutline}" stroke-width="1.4" paint-order="stroke"><text x="${g.hx}" y="${g.base}">${hh}</text><text x="${g.mx}" y="${g.base}">${mm}</text><text x="${g.cx}" y="${f(g.base - 4)}" stroke="${V.aColon}" stroke-width="1">:</text></g>`;
-    return `<g ${base} fill="${V.paper}" aria-label="${hh}:${mm}"><text x="${g.hx}" y="${g.base}">${hh}</text><text x="${g.cx}" y="${f(g.base - 4)}" fill="${V.ph}">:</text><text x="${g.mx}" y="${g.base}">${mm}</text></g>`;
+    const { h, m } = ctx.local, hh = String(h).padStart(2, '0'), mm = String(m).padStart(2, '0'), g = G.digits;
+    const base = `text-anchor="middle" transform="translate(0 ${Fonts.timeInkShiftY})"`, tag = type('T0', 'screen');
+    if (mode === 'aod') return `<g ${base} fill="${V.aFill}" stroke="${V.aOutline}" stroke-width="1.4" paint-order="stroke"><text ${tag} x="${g.hx}" y="${g.base}">${hh}</text><text ${tag} x="${g.mx}" y="${g.base}">${mm}</text><text ${tag} x="${g.cx}" y="${g.base}" stroke="${V.aColon}" stroke-width="1">:</text></g>`;
+    return `<g ${base} fill="${V.paper}" aria-label="${hh}:${mm}"><text ${tag} x="${g.hx}" y="${g.base}">${hh}</text><text ${tag} x="${g.cx}" y="${g.base}" fill="${V.ph}">:</text><text ${tag} x="${g.mx}" y="${g.base}">${mm}</text></g>`;
   }
   // Month marks in the RA frame for 2026 (the ring drifts < 0.25 deg a year): the sun's RA at 12:00 KST.
   const sunRA = (m, d) => A.sun(A.toJD(new Date(Date.UTC(2026, m, d, 3)))).ra;
@@ -336,7 +362,10 @@
   function vaultDefs(u) {
     const blur = (id, sd) => `<filter id="${u}-${id}" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="${sd}"/></filter>`;
     const monthPaths = MONTHS.map((mo, i) => `<path id="${u}-mn${i}" d="M${P(pt(202.6, mo.centre + 14))}A202.6 202.6 0 0 0 ${P(pt(202.6, mo.centre - 14))}"/>`).join('');
-    return blur('b04', 0.4) + blur('b05', 0.5) + blur('b06', 0.55) + blur('b08', 0.8) + blur('b10', 1.05) + blur('b13', 1.3) + blur('b15', 1.5) + blur('b20', 2) +
+    return `<style>text[data-tier="T4"],tspan[data-tier="T4"]{paint-order:stroke;stroke:${V.steel};stroke-opacity:.75;stroke-width:.6px;stroke-linejoin:round;filter:url(#${u}-micro-halo)}text[data-tier="T4"][data-frame="C"]{stroke:${V.transfer};stroke-opacity:.7}text[data-tier="T4"][data-frame="C"],text[data-tier="T4"][data-frame="H"]{filter:none}</style>` +
+      `<filter id="${u}-micro-halo" x="-150%" y="-200%" width="400%" height="500%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="2"/><feGaussianBlur stdDeviation="1.2" result="bed"/><feFlood flood-color="${V.track}"/><feComposite in2="bed" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>` +
+      `<filter id="${u}-engraving-bed" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="6"/><feGaussianBlur stdDeviation="2" result="bed"/><feFlood flood-color="${V.track}"/><feComposite in2="bed" operator="in"/></filter>` +
+      blur('b04', 0.4) + blur('b05', 0.5) + blur('b06', 0.55) + blur('b08', 0.8) + blur('b10', 1.05) + blur('b13', 1.3) + blur('b15', 1.5) + blur('b20', 2) +
       `${[['mw', 1.6, 0.9, 0.35], ['mw2', 1, 1.6, 0.3], ['mw3', 0.5, 1.2, 0.45]].map(([id, sd, k, c]) => `<filter id="${u}-${id}" filterUnits="userSpaceOnUse" x="-300" y="-300" width="600" height="600" color-interpolation-filters="sRGB">` +
         // Brushwork: fractal noise modulates each tone's alpha (alpha = k * noise + c), so the band reads as painted enamel.
         `<feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="4" seed="945" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${k} 0 0 0 ${c}" result="m"/>` +
@@ -366,9 +395,8 @@
       `<mask id="${u}-rcv-mid" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450"><circle cx="225" cy="225" r="188" fill="#fff"/><g clip-path="url(#${u}-ap)"><circle cx="${G.H[0]}" cy="${G.H[1]}" r="${G.HR}" fill="#000"/></g></mask>` +
       `<mask id="${u}-rcv-f1" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450">${annulus(188, 203.5, '#fff')}</mask>` +
       `<mask id="${u}-rcv-f2" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450">${annulus(203.5, 240, '#fff')}</mask>` +
-      `<mask id="${u}-wall" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450">${circle(G.Q, 58.5, 'fill="#fff"')}${circle([G.Q[0] + 1.77, G.Q[1] + 1.77], 58.5, 'fill="#000"')}</mask>` +
-      `<mask id="${u}-wall2" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450">${circle(G.Q, 58.5, 'fill="#fff"')}${circle([G.Q[0] + 4.6, G.Q[1] + 4.6], 58.5, 'fill="#000"')}</mask>` +
-      monthPaths + `<path id="${u}-prompt" d="M${P(pt(218.9, 225))}A218.9 218.9 0 0 0 ${P(pt(218.9, 135))}"/>`;
+      `<mask id="${u}-wall" maskUnits="userSpaceOnUse" x="0" y="0" width="450" height="450">${circle(G.Q, 57, 'fill="#fff"')}${circle([G.Q[0] + 1.77, G.Q[1] + 1.77], 57, 'fill="#000"')}</mask>` +
+            monthPaths + `<path id="${u}-prompt" d="M${P(pt(218.9, 225))}A218.9 218.9 0 0 0 ${P(pt(218.9, 135))}"/>`;
   }
 
   // ---------- build ----------
@@ -376,18 +404,18 @@
     const u = ctx.u, L = [], sky = ctx.sky, lst = sky.lst, sec = ctx.local.s, sol = solar(ctx.s.date, lst), s = ctx.s;
     ctx.defs = X.defs(u, vaultDefs(u));
     const skyRot = `translate(${G.P[0]} ${G.P[1]}) rotate(${f(-lst)})`;
-    const [qx, qy] = G.Q, low = s.battery !== null && s.battery <= 15, bat = s.battery === null ? '—' : `${s.battery}<tspan font-size="8" dy="-5.5">%</tspan>`;
+    const [qx, qy] = G.Q, low = s.battery !== null && s.battery <= 15, bat = s.battery === null ? '—' : `${s.battery}<tspan ${type('T4', 'Q')} dy="-6">%</tspan>`;
     const rotorC = pt(G.rotorR, sol.E3), sunC = pt(G.sunR, sol.E8), k9 = moonSprite(sky.moon.age);
     const deg = String(Math.floor(sol.lsun - 30 * sol.sign)).padStart(2, '0') + '°';
-    const dateLine = aod => `<text x="225" y="${G.dateBase}" font-size="15" letter-spacing="0.9" text-anchor="middle"><tspan fill="${aod ? V.aText : V.paper}">${String(ctx.local.day).padStart(2, '0')} ${MON[ctx.local.mon]}</tspan>` +
-      `<tspan dx="13" fill="${aod ? V.aText : V.transfer}">${WD[ctx.local.wd]}</tspan><tspan dx="13" fill="${aod ? V.aText : V.steel}">${ZOD[sol.sign]}</tspan><tspan dx="1.5" dy="-5.5" font-size="8" fill="${aod ? V.aText : V.steel}">${deg}</tspan></text>`;
+    const dateLine = aod => `<text ${type('T1', 'screen')} x="225" y="${G.dateBase}" text-anchor="middle" xml:space="preserve"><tspan fill="${aod ? V.aText : V.paper}">${String(ctx.local.day).padStart(2, '0')} ${MON[ctx.local.mon]}</tspan>` +
+      `<tspan dx="7" fill="${aod ? V.aText : V.transfer}">${WD[ctx.local.wd]}</tspan><tspan dx="7" fill="${aod ? V.aText : V.steel}">${ZOD[sol.sign]}</tspan><tspan ${type('T4', 'screen')} dx="1.5" dy="-6" fill="${aod ? V.aText : V.steel}">${deg}</tspan></text>`;
     const dg = dragonPath(), dtr = dragonAt(...G.dragon), dk = 1 / G.dragon[2];
 
     // z1: the vault sky, its names and planets, the Moon globe, the fixed light on the dome.
     L.push({ id: 'sky', svg: `<g clip-path="url(#${u}-ap)"><g transform="${skyRot}">${skyMarkup(u)}</g></g>` });
-    const pl = planetsAt(s.date), names = ANCHORS.map(a => { const [x, y] = dial(a.ra, a.dec, lst); return `<text x="${f(x)}" y="${f(y + 10 + 3.9)}">${a.name}</text>`; }).join('');
+    const pl = planetsAt(s.date), names = ANCHORS.map(a => { const [x, y] = dial(a.ra, a.dec, lst); return `<text ${type('T3', 'P')} x="${f(x)}" y="${f(y + 10 + 4.2)}">${a.name}</text>`; }).join('');
     const planets = ['saturn', 'jupiter'].map(kn => { const [x, y] = dial(pl[kn].ra, pl[kn].dec, lst); return Math.hypot(x - 225, y - 225) < G.ap + 12 ? planet(u, kn, x, y) : ''; }).join('');
-    L.push({ id: 'skymarks', svg: `<g clip-path="url(#${u}-ap)"><g font-size="11" fill="${V.transfer}" fill-opacity="0.8" letter-spacing="0.88" text-anchor="middle">${names}</g>${planets}</g>` });
+    L.push({ id: 'skymarks', svg: `<g clip-path="url(#${u}-ap)"><g fill="${V.transfer}" fill-opacity="0.8" text-anchor="middle">${names}</g>${planets}</g>` });
     L.push({ id: 'globe', svg: `<g clip-path="url(#${u}-ap)">${globe(u, k9)}</g>` });
     const [px, py] = G.P;
     L.push({ id: 'dome', svg: `<g clip-path="url(#${u}-ap)"><circle cx="225" cy="225" r="182" fill="url(#${u}-glaze)"/>` +
@@ -402,42 +430,41 @@
     const aodTicks = Array.from({ length: 12 }, (_, i) => i * 30).filter(a => a !== 180).map(a => line(a, 195, 202)).join('');
     const flank = `${arc(G.HR, -HCUT, -25, G.H[0], G.H[1])}${arc(G.HR, 25, HCUT, G.H[0], G.H[1])}`;
     L.push({ id: 'marks-aod', svg: `<path d="${aodTicks}" stroke="${V.aMark}" stroke-width="1.25"/><path d="${flank}" fill="none" stroke="${V.aLine}" stroke-width="1"/>` +
-      `<g font-size="13" font-weight="500" fill="${V.aMark}">${[0, 6, 18].map(h => ringNumeral(String(h).padStart(2, '0'), 215, W(360 - 15 * h), 13, '')).join('')}</g>` +
-      `<text font-size="11" text-anchor="middle"><textPath href="#${u}-prompt" startOffset="50%"><tspan fill-opacity="0">kali@vault:~$ </tspan><tspan fill="${V.aText}">INFINITY</tspan><tspan fill-opacity="0">_</tspan></textPath></text>` });
+      `<g fill="${V.aMark}">${[0, 6, 18].map(h => ringNumeral(String(h).padStart(2, '0'), 215, W(360 - 15 * h), 13, `${u}-aod-hour-${h}`)).join('')}</g>` + promptLine(u, sec, true) });
     L.push({ id: 'live-aod', svg: circle(sunC, 2.5, `fill="${V.aSun}"`) + circle(rotorC, 12, `fill="none" stroke="${V.aColon}" stroke-width="1.2"`) });
     L.push({ id: 'subdisc-aod', svg: circle(G.Q, G.QR, 'fill="#000"') + `<path d="${arc(59.25, 45, 171, qx, qy)}" fill="none" stroke="${V.aLine}" stroke-width="1"/>` +
-      `<text x="${qx}" y="365.5" font-size="15" font-weight="500" text-anchor="middle" fill="${low ? V.aSun : V.aText}">${bat}</text>` });
+      `<text ${type('T2', 'Q', 15)} x="${qx}" y="360" text-anchor="middle" fill="${low ? V.aSun : V.aText}">${bat}</text>` });
 
     // z3: the sunken sub-disc (camera-locked): sunray floor, wall shadow, lip, gauges, values.
     let rays = ['', '']; for (let i = 0; i < 120; i++) rays[i % 2] += line(i * 3, 6, 56, qx, qy);
     const batA = s.battery === null ? 0 : 3.6 * s.battery, stpA = s.steps === null ? 0 : 360 * Math.min(1, s.steps / Math.max(1, s.stepGoal));
-    L.push({ id: 'subdisc', svg: circle(G.Q, 58.6, `fill="${V.floor}"`) + `<path d="${rays[0]}" stroke="${V.floorHi}" stroke-width="0.9"/><path d="${rays[1]}" stroke="${V.floorLo}" stroke-width="0.9"/>` +
-      circle(G.Q, 4, `fill="${V.engrave}"`) + `<rect width="450" height="450" fill="#000" opacity="0.7" mask="url(#${u}-wall)"/><g filter="url(#${u}-b20)"><rect width="450" height="450" fill="#000" opacity="0.3" mask="url(#${u}-wall2)"/></g>` +
-      sweepRing(qx, qy, 58.5, 60, STEEL_WALL, 4) + circle(G.Q, 44, `fill="none" stroke="${V.track}" stroke-width="2"`) + circle(G.Q, 39.5, `fill="none" stroke="${V.track}" stroke-width="2"`) +
+    L.push({ id: 'subdisc', svg: `<g data-bake="subdisc">` + circle(G.Q, 58.6, `fill="${V.floor}"`) + `<path d="${rays[0]}" stroke="${V.floorHi}" stroke-width="0.9"/><path d="${rays[1]}" stroke="${V.floorLo}" stroke-width="0.9"/>` +
+      circle(G.Q, 4, `fill="${V.engrave}"`) + `<g data-gate-shadow="subdisc-floor"><rect width="450" height="450" fill="#000" opacity="0.9" mask="url(#${u}-wall)"/></g>` +
+      `<g data-gate-edge="subdisc-lip">${sweepRing(qx, qy, 57, 60, STEEL_WALL, 4)}</g>` + circle(G.Q, 44, `fill="none" stroke="${V.track}" stroke-width="2"`) + circle(G.Q, 39.5, `fill="none" stroke="${V.track}" stroke-width="2"`) + `</g>` +
       (batA > 0.5 ? `<path d="${arc(44, 0, Math.min(359.99, batA), qx, qy)}" fill="none" stroke="${low ? V.warning : V.ph}" stroke-width="2" stroke-linecap="round"/>` : '') +
       (stpA > 0.5 ? `<path d="${arc(39.5, 0, Math.min(359.99, stpA), qx, qy)}" fill="none" stroke="${V.month}" stroke-width="2" stroke-linecap="round"/>` : '') +
-      subScale(u, qx, qy) + `<g font-weight="500" text-anchor="middle"><text x="${qx}" y="338" font-size="20" fill="${V.paper}">${stepsText(s.steps)}</text>` +
-      `<text x="${qx}" y="348.5" font-size="7.5" letter-spacing="0.6" fill="${V.steel}">/${s.stepGoal.toLocaleString('en-US')}</text><text x="${qx}" y="365.5" font-size="15" fill="${low ? V.warning : V.paper}">${bat}</text></g>` });
+      subScale(u, qx, qy) + `<g text-anchor="middle"><text ${type('T2', 'Q', 20)} x="${qx}" y="333.5" fill="${V.paper}">${stepsText(s.steps)}</text>` +
+      `<text ${type('T4', 'Q')} x="${qx}" y="344" fill="${V.steel}" fill-opacity="0.75">/${s.stepGoal.toLocaleString('en-US')}</text><text ${type('T2', 'Q', 15)} x="${qx}" y="360" fill="${low ? V.warning : V.paper}">${bat}</text></g>` });
 
     // z4: the eccentric crescent with its guilloche about H and the polished horizon bead.
     let guil = ['', '']; for (let r = 211.25, i = 0; r < 238; r += 1.25, i++) guil[i % 2] += `M${f(G.H[0] - r)} ${G.H[1]}a${f(r)} ${f(r)} 0 1 0 ${f(2 * r)} 0a${f(r)} ${f(r)} 0 1 0 ${f(-2 * r)} 0`;
     let bead = '';
     for (let a = -HCUT - 1; a < HCUT + 1; a += 1) {
       const w = Math.max(0, Math.cos((a - 315) * D2R)), env = smooth(HCUT + 1, HCUT - 16, Math.abs(a + 0.65)), r1 = G.HR + 0.6 + 4.4 * env;
-      bead += `<path d="${sector(G.H[0], G.H[1], G.HR + 2.5 * env, r1, a, a + 1.3)}" fill="${mix(V.opMid, mix(V.steelMid, V.steelHi, w), env)}"/><path d="${sector(G.H[0], G.H[1], G.HR, G.HR + 0.05 + 2.5 * env, a, a + 1.3)}" fill="${mix(V.opLo, mix(V.steelFoot, V.steelMid, w), env)}"/>`;
+      bead += `<path d="${sector(G.H[0], G.H[1], G.HR + 2.5 * env, r1, a, a + 1.3)}" fill="${mix(V.opMid, mix(BEAD_FLOOR, V.steelHi, w), env)}"/><path d="${sector(G.H[0], G.H[1], G.HR, G.HR + 0.05 + 2.5 * env, a, a + 1.3)}" fill="${mix(V.opLo, mix(V.steelLo, V.steel, w), env)}"/>`;
     }
     L.push({ id: 'crescent', svg: `<g clip-path="url(#${u}-ap)"><g clip-path="url(#${u}-hz)"><circle cx="${f(G.H[0] + 1.3)}" cy="${f(G.H[1] + 1.3)}" r="${G.HR}" fill="none" stroke="#000" stroke-opacity="0.6" stroke-width="2.6" filter="url(#${u}-b04)"/></g>` +
-      `<g clip-path="url(#${u}-cres)"><rect x="40" y="30" width="370" height="140" fill="url(#${u}-crface)"/><path d="${guil[0]}" fill="none" stroke="#fff" stroke-opacity="0.06" stroke-width="1.25"/><path d="${guil[1]}" fill="none" stroke="#000" stroke-opacity="0.09" stroke-width="1.25"/></g>${bead}</g>` });
+      `<g clip-path="url(#${u}-cres)"><rect x="40" y="30" width="370" height="140" fill="url(#${u}-crface)"/><path d="${guil[0]}" fill="none" stroke="#fff" stroke-opacity="0.06" stroke-width="1.25"/><path d="${guil[1]}" fill="none" stroke="#000" stroke-opacity="0.09" stroke-width="1.25"/></g><g data-gate-edge="bead">${bead}</g></g>` });
 
     L.push({ id: 'instrument', svg: `<g clip-path="url(#${u}-ap)">${instrument(u, ctx, sol)}</g>` });
     // z4b: lip, trench, step, F1 base and rule, groove.
-    L.push({ id: 'rings', svg: sweepRing(225, 225, G.lip[0], G.lip[1], STEEL_WALL) + annulus(...G.trench, V.trench) + sweepRing(225, 225, G.step[0], G.step[1], STEEL_WALL) +
-      annulus(...G.f1, V.f1) + `<circle cx="225" cy="225" r="188.5" fill="none" stroke="${V.transfer}" stroke-opacity="0.35" stroke-width="1"/>` + annulus(...G.groove, V.groove) });
+    L.push({ id: 'rings', svg: `<g data-gate-edge="lip">${sweepRing(225, 225, G.lip[0], G.lip[1], STEEL_WALL)}</g>` + annulus(...G.trench, V.trench) + `<g data-gate-edge="step">${sweepRing(225, 225, G.step[0], G.step[1], STEEL_WALL)}</g>` +
+      `<g data-gate-surface="f1">${annulus(...G.f1, V.f1)}</g>` + `<circle cx="225" cy="225" r="188.5" fill="none" stroke="${V.transfer}" stroke-opacity="0.35" stroke-width="1"/>` + annulus(...G.groove, V.groove) });
     // z4c: the calendar turns in the RA frame; the sun's place among the months is the date.
     let rules = '', tS = '', tL = '';
     for (const mo of MONTHS) { rules += line(mo.rule, 189, 202); for (const [d, a] of mo.ticks) (d % 10 ? (tS += line(a, 189, 191.5)) : (tL += line(a, 189, 194))); }
     L.push({ id: 'calendar', svg: `<g transform="rotate(${f(sol.E4)} 225 225)"><path d="${rules}" stroke="${V.transfer}" stroke-opacity="0.6" stroke-width="1"/><path d="${tS}" stroke="${V.tickDay}" stroke-width="1"/><path d="${tL}" stroke="${V.month}" stroke-width="1.2"/>` +
-      `<g font-size="11" fill="${V.month}" fill-opacity="0.85" letter-spacing="0.66" text-anchor="middle">${MONTHS.map((mo, i) => `<text><textPath href="#${u}-mn${i}" startOffset="50%">${mo.name}</textPath></text>`).join('')}</g></g>` });
+      `<g fill="${V.month}" fill-opacity="0.85" text-anchor="middle">${MONTHS.map((mo, i) => `<text ${type('T3', 'C')}><textPath href="#${u}-mn${i}" startOffset="50%">${mo.name}</textPath></text>`).join('')}</g></g>` });
     let gloss = ''; for (let a = 290; a < 340; a += 2) gloss += `<path d="${sector(225, 225, 188, 202.5, a, a + 2.2)}" fill="#fff" fill-opacity="${f(0.16 * Math.max(0, 1 - Math.abs(a + 1 - 315) / 25))}"/>`;
     L.push({ id: 'gloss', svg: gloss });
     L.push({ id: 'sun', svg: `<path d="${star8(sunC[0], sunC[1], 4, 2.4, 1.3)}" fill="${V.sun}" filter="url(#${u}-b05)" opacity="0.8"/><path d="${star8(sunC[0], sunC[1], 4, 2.4, 1.3)}" fill="url(#${u}-sun5)"/>` });
@@ -456,33 +483,33 @@
     }
     const nums = [0, 2, 4, 6, 8, 10, 14, 16, 18, 20, 22].map(h => [String(h).padStart(2, '0'), W(360 - 15 * h)]);
     let f2shadow = ''; for (let a = 225; a < 405; a += 10) f2shadow += `<path d="${sector(225, 225, 201.6, 203.5, a, a + 10.4)}" fill="#000" fill-opacity="${f(0.6 * Math.max(0, Math.cos((a + 5 - 315) * D2R)))}"/>`;
-    L.push({ id: 'f2', svg: `<g filter="url(#${u}-b06)">${f2shadow}</g>` + sweepRing(225, 225, G.chamfer[0], G.chamfer[1], STEEL_WALL) + sweepRing(225, 225, G.f2[0], G.f2[1], OPALINE) +
+    L.push({ id: 'f2', svg: `<g data-bake="flange_f2"><g filter="url(#${u}-b06)">${f2shadow}</g>` + `<g data-gate-edge="chamfer">${sweepRing(225, 225, G.chamfer[0], G.chamfer[1], STEEL_WALL)}</g>` + `<g data-gate-surface="f2">${sweepRing(225, 225, G.f2[0], G.f2[1], OPALINE)}</g>` +
       `<path d="${gl[0]}" stroke="#fff" stroke-opacity="0.07" stroke-width="1.1"/><path d="${gl[1]}" stroke="#000" stroke-opacity="0.1" stroke-width="1.1"/><path d="${gl[2]}" stroke="#fff" stroke-opacity="0.16" stroke-width="1.1"/>` +
       `<path d="${qt}" stroke="${V.engrave}" stroke-width="1"/>${batons}` +
-      `<g font-size="13" font-weight="500" text-anchor="middle"><g fill="${V.engrave}" transform="translate(0.75 0.75)">${nums.map(([t, a]) => ringNumeral(t, 215, a, 13, '')).join('')}</g><g fill="${V.paper}">${nums.map(([t, a]) => ringNumeral(t, 215, a, 13, '')).join('')}</g></g>` +
-      `<text font-size="11" text-anchor="middle"><textPath href="#${u}-prompt" startOffset="50%"><tspan fill="${V.transfer}">kali@vault:~$ </tspan><tspan fill="${V.ph}">INFINITY</tspan><tspan fill="${V.ph}" fill-opacity="${sec % 2 ? 0 : 1}">_</tspan></textPath></text>` +
+      `<g text-anchor="middle"><g fill="${V.engrave}" transform="translate(0.75 0.75)">${nums.map(([t, a]) => ringNumeral(t, 215, a, 13, `${u}-hour-shadow-${t}`)).join('')}</g><g fill="${V.paper}">${nums.map(([t, a]) => ringNumeral(t, 215, a, 13, `${u}-hour-${t}`)).join('')}</g></g>` +
+      promptLine(u, sec) + `</g>` +
       `<path d="${arc(215, 180 + sol.H0, 540 - sol.H0)}" fill="none" stroke="#000" stroke-opacity="0.35" stroke-width="20"/>` });
 
     // z5-7: the arched smoked-glass plate over the zenith, and the date line on it.
     L.push({ id: 'plate-aod', svg: `<path d="${platePath()}" fill="#000"/>` });
-    L.push({ id: 'plate-shadow', svg: `<path d="${platePath(2.2, 2.2)}" fill="#000" fill-opacity="0.5" filter="url(#${u}-b20)"/>` });
+    L.push({ id: 'plate-shadow', svg: `<g data-gate-shadow="plate-sky"><path d="${platePath(3.5, 3.5)}" fill="#000" fill-opacity="0.85" filter="url(#${u}-b10)"/></g>` });
     // Glass, not a card: no uniform outline. A polished facet lit by its normal against the 315 deg key, an internal reflection on the far (SE) edges, a faint sheen.
     const rim = plateRim(); let facet = '', refl = '';
     for (let i = 1; i < rim.length; i++) {
       const [x0, y0] = rim[i - 1], [x1, y1, n] = rim[i], w = Math.max(0, Math.cos((n - 315) * D2R)), q = Math.max(0, Math.cos((n - 135) * D2R));
-      facet += `<path d="M${f(x0)} ${f(y0)}L${f(x1)} ${f(y1)}" stroke="${mix(V.steelFoot, V.steelHi, w ** 1.4)}" stroke-opacity="${f(0.35 + 0.55 * w)}"/>`;
+      facet += `<path d="M${f(x0)} ${f(y0)}L${f(x1)} ${f(y1)}" stroke="${mix(V.steelMid, V.steelHi, w ** 1.4)}" stroke-opacity="${f(0.5 + 0.4 * w)}"/>`;
       if (q > 0.05) { const k = 2.2, ix = a => a - k * Math.sin(n * D2R), iy = b => b + k * Math.cos(n * D2R); refl += `<path d="M${f(ix(x0))} ${f(iy(y0))}L${f(ix(x1))} ${f(iy(y1))}" stroke="${V.steel}" stroke-opacity="${f(0.28 * q)}"/>`; }
     }
     L.push({ id: 'plate', svg: `<path d="${platePath()}" fill="#000" fill-opacity="0.75"/><path d="${platePath()}" fill="url(#${u}-sheen)"/>` +
-      `<g fill="none" stroke-width="1" stroke-linecap="round">${refl}</g><g fill="none" stroke-width="1.3" stroke-linecap="round">${facet}</g>` });
+      `<g fill="none" stroke-width="1" stroke-linecap="round">${refl}</g><g data-gate-edge="plate-bevel" fill="none" stroke-width="1.3" stroke-linecap="round">${facet}</g>` });
     L.push({ id: 'date', svg: dateLine(false) });
     L.push({ id: 'date-aod', svg: dateLine(true) });
 
     // z8: the official dragon on top: height-mapped cast shadow, contact bed, per-stroke bevel.
-    const cast = (o, b, m) => `<g mask="url(#${u}-${m})"><g transform="translate(${o} ${o})" filter="url(#${u}-${b})" opacity="0.6"><g transform="${dtr}" fill="#000">${dg}</g></g></g>`;
-    L.push({ id: 'dragon-shadow', svg: cast(4.4, 'b13', 'rcv-sky') + cast(3.5, 'b10', 'rcv-mid') + cast(2.7, 'b08', 'rcv-f1') + cast(1.8, 'b06', 'rcv-f2') });
+    const cast = (o, b, m, op = 0.6) => `<g mask="url(#${u}-${m})"><g transform="translate(${o} ${o})" filter="url(#${u}-${b})" opacity="${op}"><g transform="${dtr}" fill="#000">${dg}</g></g></g>`;
+    L.push({ id: 'dragon-shadow', svg: cast(4.4, 'b13', 'rcv-sky') + `<g data-gate-shadow="dragon-crescent">${cast(3.5, 'b04', 'rcv-mid', 1)}</g>` + cast(2.7, 'b08', 'rcv-f1') + cast(1.8, 'b06', 'rcv-f2') });
     L.push({ id: 'dragon', svg: `<g filter="url(#${u}-b05)"><g transform="${dtr}" fill="none" stroke="#000" stroke-opacity="0.85" stroke-width="${f(3 * dk)}" stroke-linejoin="round">${dg}</g></g>` +
-      `<g transform="translate(0.6 0.6)"><g transform="${dtr}" fill="${V.deep}">${dg}</g></g><g transform="translate(-0.6 -0.6)"><g transform="${dtr}" fill="${V.spec}">${dg}</g></g>` +
+      `<g data-gate-edge="dragon-bevel"><g transform="translate(0.6 0.6)"><g transform="${dtr}" fill="${V.deep}">${dg}</g></g><g transform="translate(-0.6 -0.6)"><g transform="${dtr}" fill="${V.spec}">${dg}</g></g></g>` +
       `<g transform="${dtr}" fill="url(#${u}-dragon5)">${dg}</g>` });
     L.push({ id: 'dragon-aod', svg: `<g transform="${dtr}" fill="${V.aDragon}">${dg}</g>` });
     L.push({ id: 'digits', svg: clock(ctx, 'active') }, { id: 'digits-aod', svg: clock(ctx, 'aod') });
@@ -509,6 +536,7 @@
     M5: '2026-06-21T12:00:00+09:00', M6: '2026-10-25T08:08:00+09:00', M7: '2026-11-09T20:08:00+09:00', M8: '2026-11-17T20:08:00+09:00'
   };
   F.PRESETS.vault5 = { label: 'G3 Debate vault', note: 'Pole under the dragon, horizon crescent, Moon globe at 3, sub-disc at 7, sidereal rotor, two flanges', host: 'vault', timeline: timeline(), build };
-  root.VaultV5 = { horizonPt, aboutH, G, V, CUT, HCUT, NAMES, ANCHORS, MOMENTS, PSTAR, solar, planetsAt, moonSprite, precess, galactic, tone, dial, platePath, archY, maskSvg };
+  root.VaultV5 = { horizonPt, aboutH, G, V, TYPE, CUT, HCUT, NAMES, ANCHORS, MOMENTS, PSTAR, FAINT_STARS, solar, planetsAt, moonSprite, precess, galactic, tone, dial, platePath, archY, maskSvg,
+    source: { build, defs: vaultDefs, sky: skyMarkup, globe, planet, rotor, star8, circle, sweepRing, plateRim, R_SKY } };
   if (typeof module !== 'undefined') module.exports = root.VaultV5;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

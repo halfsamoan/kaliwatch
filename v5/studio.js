@@ -7,25 +7,33 @@
   const $ = s => document.querySelector(s);
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const UID = 'st';
-  const state = { preset: 'galaxia', mode: 'active', live: false, date: new Date(T.sample.iso), battery: T.sample.battery, steps: T.sample.steps, draco: true, guides: false, slow: false };
-  let raf = 0, liveTimer = 0, litToken = 0;
+  const state = { preset: 'vault5', mode: 'active', live: false, date: new Date(window.VaultV5.MOMENTS.M1), battery: T.sample.battery, steps: T.sample.steps, stepGoal: 8000, draco: true, guides: false, slow: false, motion: 'calm', manualReduce: false, windowMs: 360, tilt: { x: 0, y: 0 } };
+  let raf = 0, liveTimer = 0, litToken = 0, transition = null;
+  const currentValues = new Map();
+  const reduced = () => reduce.matches || state.manualReduce || state.motion === 'still';
 
-  const input = extra => ({ preset: state.preset, mode: state.mode, date: state.date, battery: state.battery, steps: state.steps, highlightDraco: state.draco, guides: state.guides, uid: UID, ...extra });
+  const input = extra => ({ preset: state.preset, mode: state.mode, date: state.date, battery: state.battery, steps: state.steps, stepGoal: state.stepGoal, highlightDraco: state.draco, guides: state.guides, motion: state.motion, reducedMotion: reduced(), windowMs: state.windowMs, tilt: state.tilt, uid: UID, ...extra });
   const seoul = d => { const t = new Date(d.getTime() + T.site.utcOffsetMin * 60000); return t.toISOString().slice(0, 19); };
   const hm = h => h == null ? 'none' : `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`;
 
   function draw() {
-    cancelAnimationFrame(raf); raf = 0;
+    cancelAnimationFrame(raf); raf = 0; transition = null; currentValues.clear();
     $('#face').innerHTML = F.render(input());
     $('#caption').textContent = `${F.PRESETS[state.preset].note}`;
     readout();
   }
 
   // One frame of a transition, applied to the live DOM. ms = Infinity settles it.
-  function applyFrame(toMode, ms) {
+  function applyFrame(toMode, ms, interruptedFrom, progress) {
     const tl = F.PRESETS[state.preset].timeline, attr = /(\w+)="([^"]*)"/g;
     for (const g of $('#face').querySelectorAll(`[id^="${UID}-"][data-layer]`)) {
-      const s = F.attrs(F.valuesAt(g.dataset.layer, toMode, ms, tl)), seen = {};
+      let values = F.valuesAt(g.dataset.layer, toMode, ms, tl);
+      if (interruptedFrom) {
+        const from = interruptedFrom.get(g.dataset.layer), target = F.valuesAt(g.dataset.layer, toMode, Infinity, tl);
+        values = Object.fromEntries(Object.keys(target).map(k => [k, F.parts.lerp(from[k], target[k], F.ease(progress))]));
+      }
+      currentValues.set(g.dataset.layer, values);
+      const s = F.attrs(values), seen = {};
       for (const m of s.matchAll(attr)) seen[m[1]] = m[2];
       g.setAttribute('opacity', seen.opacity);
       seen.transform ? g.setAttribute('transform', seen.transform) : g.removeAttribute('transform');
@@ -33,16 +41,20 @@
     }
   }
   function play(toMode) {
+    const previous = transition, fromValues = raf && previous ? new Map(currentValues) : null;
     state.mode = toMode; syncMode();
-    if (reduce.matches) { draw(); return; }
+    if (reduced()) { draw(); return; }
     cancelAnimationFrame(raf);
     const from = toMode === 'active' ? 'ambient' : 'active';
-    $('#face').innerHTML = F.render(input({ mode: from }));
-    const dur = toMode === 'active' ? T.motion.wakeMs : T.motion.sleepMs, k = state.slow ? 6 : 1, t0 = performance.now();
+    if (!fromValues) $('#face').innerHTML = F.render(input({ mode: from }));
+    const normal = state.windowMs * (toMode === 'active' ? 1 : 0.5), dur = fromValues ? Math.max(1, Math.min(normal, previous.elapsed)) : normal;
+    const k = state.slow ? 6 : 1, t0 = performance.now();
+    transition = { elapsed: 0 };
     const step = now => {
-      const ms = (now - t0) / k;
-      applyFrame(toMode, ms);
-      if (ms < dur + 16) raf = requestAnimationFrame(step); else { raf = 0; readout(); }
+      const elapsed = (now - t0) / k, ms = elapsed * 360 / state.windowMs;
+      transition.elapsed = elapsed;
+      applyFrame(toMode, ms, fromValues, Math.min(1, elapsed / dur));
+      if (elapsed < dur) raf = requestAnimationFrame(step); else { applyFrame(toMode, Infinity); raf = 0; transition = null; readout(); }
     };
     raf = requestAnimationFrame(step);
   }
@@ -82,7 +94,8 @@
     $('#readout').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
     litPercent().then(p => {
       if (p == null || !$('#lit')) return;
-      $('#lit').textContent = `${p.toFixed(1)}% (limit 15%)`; $('#lit').className = p <= 15 ? 'ok' : 'warn';
+      const limit = state.preset === 'vault5' ? 9.5 : 15;
+      $('#lit').textContent = `${p.toFixed(1)}% (target ${limit}%)`; $('#lit').className = p <= limit ? 'ok' : 'warn';
     }).catch(() => { if ($('#lit')) $('#lit').textContent = 'could not measure'; });
   }
 
@@ -115,6 +128,14 @@
     $('#wake').addEventListener('click', () => play('active'));
     $('#sleep').addEventListener('click', () => play('ambient'));
     $('#slow').addEventListener('change', e => { state.slow = e.target.checked; });
+    const motionNote = () => {
+      $('#motion-note').textContent = reduced() ? 'Reduced motion: transitions switch instantly; time and astronomy keep updating.' : `Wake ${state.windowMs} ms, sleep ${state.windowMs / 2} ms. Information stays fixed.`;
+      for (const slider of $('#tilt-controls').querySelectorAll('input')) slider.disabled = state.motion !== 'full' || reduced();
+    };
+    $('#motion').addEventListener('change', e => { state.motion = e.target.value; motionNote(); draw(); });
+    $('#reduce-motion').addEventListener('change', e => { state.manualReduce = e.target.checked; motionNote(); draw(); });
+    $('#window').addEventListener('input', e => { state.windowMs = +e.target.value; $('#window-v').textContent = `${state.windowMs} ms`; motionNote(); });
+    for (const axis of ['x', 'y']) $(`#tilt-${axis}`).addEventListener('input', e => { state.tilt[axis] = +e.target.value; $(`#tilt-${axis}-v`).textContent = `${e.target.value}°`; draw(); });
     $('#live').addEventListener('change', e => setLive(e.target.checked));
     $('#when').value = seoul(state.date);
     $('#when').addEventListener('change', e => { if (e.target.value) setDate(new Date(e.target.value + (e.target.value.length === 16 ? ':00' : '') + '+09:00')); });
@@ -123,12 +144,12 @@
     bat.value = state.battery; steps.value = state.steps; $('#bat-v').textContent = `${state.battery}%`; $('#steps-v').textContent = state.steps.toLocaleString('en-US');
     bat.addEventListener('input', () => { state.battery = +bat.value; $('#bat-v').textContent = `${bat.value}%`; draw(); });
     steps.addEventListener('input', () => { state.steps = +steps.value; $('#steps-v').textContent = (+steps.value).toLocaleString('en-US'); draw(); });
+    $('#step-goal').addEventListener('change', e => { state.stepGoal = Math.max(1, Math.min(1000000, Math.round(+e.target.value || 8000))); e.target.value = state.stepGoal; draw(); });
     $('#draco').addEventListener('change', e => { state.draco = e.target.checked; draw(); });
     $('#guides').addEventListener('change', e => { state.guides = e.target.checked; draw(); });
     $('#dl-svg').addEventListener('click', exportSvg);
     $('#dl-png').addEventListener('click', exportPng);
-    const note = () => { $('#motion-note').textContent = reduce.matches ? 'Reduced motion is on: transitions switch instantly.' : `Wake ${T.motion.wakeMs} ms back to front, sleep ${T.motion.sleepMs} ms front to back. The time never moves.`; };
-    reduce.addEventListener('change', note); note();
+    reduce.addEventListener('change', () => { motionNote(); draw(); }); motionNote();
   }
 
   bind(); draw();

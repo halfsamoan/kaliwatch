@@ -1,4 +1,8 @@
 @font-face { font-family: OrbitMono; src: url('fonts/RobotoMono.ttf'); font-weight: 100 700; }
+@font-face { font-family: OrbitWide; src: url('fonts/MartianMono-Wide-SemiBold.ttf'); font-weight: 600; }
+@font-face { font-family: OrbitStd; src: url('fonts/MartianMono-Std-Medium.ttf'); font-weight: 500; }
+@font-face { font-family: OrbitStd; src: url('fonts/MartianMono-Std-Regular.ttf'); font-weight: 400; }
+@font-face { font-family: OrbitCond; src: url('fonts/MartianMono-Cond-Regular.ttf'); font-weight: 400; }
 
 :root {
   --ink: #050806; --panel: #0A100D; --line: #1A2620; --text: #C9D6D2; --quiet: #8A9A92;
@@ -32,10 +36,11 @@ label output { color: var(--text); font-family: var(--mono); }
 .hint { margin: 0; color: var(--quiet); font-size: 12px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; }
 
-select, input[type="datetime-local"], button {
+select, input[type="datetime-local"], input[type="number"], button {
   font: inherit; color: var(--text); background: #0F1713; border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
 select { width: 100%; }
 button { cursor: pointer; }
+input:disabled { opacity: .4; cursor: not-allowed; }
 button:hover { border-color: var(--phosphor-deep); }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--phosphor); outline-offset: 2px; }
 input[type="range"] { accent-color: var(--phosphor); width: 100%; }

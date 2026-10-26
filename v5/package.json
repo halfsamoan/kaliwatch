@@ -8,6 +8,7 @@
     "start": "node serve.cjs",
     "test": "node tools/test-astro.cjs",
     "verify": "node tools/verify.cjs",
-    "gates": "node tools/gates.cjs"
+    "gates": "node tools/gates.cjs",
+    "check-wff": "node tools/check-wff.cjs"
   }
 }

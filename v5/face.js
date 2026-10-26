@@ -10,6 +10,8 @@
   const A = root.KaliAstro || req('./astro.js');
   const K = root.KaliSky || req('./sky.js');
   const DR = root.KaliDragon || req('./dragon-data.js');
+  const OrbitFonts = root.OrbitFonts || req('./orbit-fonts.js');
+  const Expressions = root.WffExpr || req('./wff-expr.js');
   const C = T.color, D2R = Math.PI / 180;
   const f = n => Number((+n).toFixed(2));
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
@@ -44,10 +46,13 @@
     return {
       preset: PRESETS[input.preset] ? input.preset : 'vault', mode: input.mode === 'ambient' ? 'ambient' : 'active', date,
       battery: input.battery === null ? null : clampNum(input.battery, 0, 100, T.sample.battery),
-      steps: input.steps === null ? null : clampNum(input.steps, 0, 99999, T.sample.steps), stepGoal: input.stepGoal || T.sample.stepGoal,
+      steps: input.steps === null ? null : clampNum(input.steps, 0, 99999, T.sample.steps), stepGoal: Math.max(1, clampNum(input.stepGoal, 1, 1000000, input.preset === 'vault5' ? 8000 : T.sample.stepGoal)),
       uid: (input.uid || 'kv').replace(/[^a-z0-9-]/gi, ''), guides: !!input.guides, fontData: input.fontData || '',
       hide: Array.isArray(input.hide) ? input.hide : [],
       frame: input.frame || null, // {fromMode, toMode, ms}: render one frame of a transition
+      motion: ['full', 'calm', 'still'].includes(input.motion) ? input.motion : 'calm',
+      reducedMotion: !!input.reducedMotion, windowMs: Math.max(300, Math.min(800, +input.windowMs || 360)),
+      tilt: { x: Math.max(-90, Math.min(90, +input.tilt?.x || 0)), y: Math.max(-90, Math.min(90, +input.tilt?.y || 0)) },
       dayDim: input.dayDim !== false, labels: input.labels !== false, highlightDraco: input.highlightDraco !== false
     };
   }
@@ -395,24 +400,39 @@ ${extra}</defs>`;
     if (v.scale !== 1) tr.push(`translate(${f(cx)} ${f(cy)}) scale(${Number(v.scale.toFixed(4))}) translate(${f(-cx)} ${f(-cy)})`);
     return `opacity="${Number(v.opacity.toFixed(3))}"${tr.length ? ` transform="${tr.join(' ')}"` : ''}${v.opacity < 0.002 ? ' visibility="hidden"' : ''}`;
   }
+  function parallax(id, motion, tilt) {
+    if (motion !== 'full' || /-aod$/.test(id)) return [0, 0];
+    const group = ['sky', 'skymarks', 'globe', 'dome'].includes(id) ? [0.07, 3]
+      : ['crescent', 'instrument', 'rings', 'calendar', 'gloss', 'sun', 'trail', 'rotor', 'f2'].includes(id) ? [0.035, 1.5]
+      : ['dragon', 'dragon-shadow'].includes(id) ? [-0.02, 1] : [0, 0];
+    return ['x', 'y'].map(k => Math.max(-group[1], Math.min(group[1], group[0] * tilt[k])));
+  }
 
   // ---------- render ----------
   function render(input = {}) {
     const s = normalize(input), preset = PRESETS[s.preset], u = s.uid;
     const ctx = { s, u, local: localFields(s.date), sky: A.sky(s.date, T.site), defs: '' };
+    if (s.preset === 'vault5') {
+      ctx.expressions = Expressions.at(s.date, { moonAge: ctx.sky.moon.age, battery: s.battery, steps: s.steps, stepGoal: s.stepGoal });
+      ctx.sky.lst = ctx.expressions.lst;
+      ctx.sky.lstHours = ctx.expressions.lst / 15;
+    }
     const layers = preset.build(ctx).filter(l => !s.hide.includes(l.id));
-    const toMode = s.frame ? s.frame.toMode : s.mode, ms = s.frame ? s.frame.ms : Infinity;
-    const body = layers.map(l => `<g id="${u}-${l.id}" data-layer="${l.id}" ${attrs(valuesAt(l.id, toMode, ms, preset.timeline))}>${l.svg}</g>`).join('\n');
-    const font = s.fontData ? `@font-face{font-family:OrbitMono;src:url(data:font/ttf;base64,${s.fontData})}` : '';
+    const toMode = s.frame ? s.frame.toMode : s.mode, ms = s.frame && s.motion !== 'still' && !s.reducedMotion ? s.frame.ms * 360 / s.windowMs : Infinity;
+    const body = layers.map(l => {
+      const [dx, dy] = parallax(l.id, s.reducedMotion ? 'still' : s.motion, s.tilt);
+      return `<g data-parallax="${l.id}" transform="translate(${f(dx)} ${f(dy)})"><g id="${u}-${l.id}" data-layer="${l.id}" ${attrs(valuesAt(l.id, toMode, ms, preset.timeline))}>${l.svg}</g></g>`;
+    }).join('\n');
+    const font = (s.preset === 'vault5' ? OrbitFonts.css : '') + (s.fontData ? `@font-face{font-family:OrbitMono;src:url(data:font/ttf;base64,${s.fontData})}` : '');
     const guides = s.guides ? `<g fill="none" stroke="#E9A5FF" stroke-width=".8" stroke-dasharray="3 5" opacity=".7"><circle cx="225" cy="225" r="171"/><circle cx="225" cy="225" r="196"/><path d="M0 225h450M225 0v450"/></g>` : '';
     return `<svg xmlns="http://www.w3.org/2000/svg" width="450" height="450" viewBox="0 0 450 450" role="img" aria-label="KALIWATCH ${esc(preset.label)} ${toMode}">` +
-      `<title>${esc(T.name)} / ${esc(preset.label)} / ${toMode}</title>${ctx.defs}<style>${font}text{font-family:${T.type.family};font-variant-numeric:tabular-nums}</style>` +
+      `<title>${esc(T.name)} / ${esc(preset.label)} / ${toMode}</title>${ctx.defs}<style>${font}svg{font-family:${T.type.family}}text{font-variant-numeric:tabular-nums}</style>` +
       `<clipPath id="${u}-dial"><circle cx="225" cy="225" r="225"/></clipPath><g clip-path="url(#${u}-dial)"><rect width="450" height="450" fill="#000"/>${body}${guides}</g></svg>`;
   }
   function layerIds(presetKey) { return PRESETS[presetKey].build({ s: normalize({ preset: presetKey }), u: 'x', local: localFields(new Date(T.sample.iso)), sky: A.sky(new Date(T.sample.iso), T.site), defs: '' }).map(l => l.id); }
 
   // Shared drawing parts for compositions defined in other modules (galaxia.js).
   const parts = { f, esc, pt, P, arc, ring, ticks, lerp, dragonRelief, dragonAt, dragonPath, moonGlyph, sunGlyph, digits, dateText, lstText, gauge, telemetryValues, prompt, defs, seedFlecks, MON, WD, ZOD, DRAGON_INK };
-  root.VaultFace = { render, normalize, PRESETS, TIMELINE, valuesAt, attrs, layerIds, localFields, ease, arc, pt, parts };
+  root.VaultFace = { render, normalize, PRESETS, TIMELINE, valuesAt, attrs, parallax, layerIds, localFields, ease, arc, pt, parts };
   if (typeof module !== 'undefined') module.exports = root.VaultFace;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

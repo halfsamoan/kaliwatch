@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KALIWATCH Celestial Vault</title>
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <main class="studio">
+    <section class="stage" aria-label="Watch face preview">
+      <div class="watch"><div id="face" class="face" role="img" aria-live="off"></div></div>
+      <p class="caption" id="caption"></p>
+    </section>
+
+    <aside class="panel" aria-label="Studio controls">
+      <header class="masthead">
+        <h1>KALIWATCH <span>Celestial Vault</span></h1>
+        <p>v5 reference studio. Main reference: JLC Master Hybris Artistica Calibre 945 Galaxia.</p>
+      </header>
+
+      <fieldset>
+        <legend>Composition</legend>
+        <select id="preset" aria-label="Composition">
+          <optgroup label="Round 4 (debate result)">
+            <option value="vault5">G3 Debate vault: pole under the dragon, sub-disc at 7</option>
+          </optgroup>
+          <optgroup label="Round 3">
+            <option value="galaxia">G1 Galaxia: planet behind the dragon</option>
+            <option value="galaxia-mirror">G2 Galaxia mirrored: the photo's arrangement</option>
+          </optgroup>
+          <optgroup label="Round 1 (superseded)">
+            <option value="vault">A Vault</option>
+            <option value="pole">B Pole bridge</option>
+            <option value="window">C Planisphere window</option>
+          </optgroup>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Mode and transition</legend>
+        <div class="seg" role="group" aria-label="Display mode">
+          <button type="button" id="m-active" aria-pressed="true">Active</button>
+          <button type="button" id="m-ambient" aria-pressed="false">Always-on</button>
+        </div>
+        <div class="row">
+          <button type="button" id="wake">Replay wake</button>
+          <button type="button" id="sleep">Replay sleep</button>
+        </div>
+        <label class="check"><input type="checkbox" id="slow"> Slow motion (6x)</label>
+        <p class="hint" id="motion-note"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Time in Seoul</legend>
+        <label class="check"><input type="checkbox" id="live"> Follow the clock</label>
+        <input type="datetime-local" id="when" step="1" aria-label="Date and time in Seoul">
+        <div class="row">
+          <button type="button" data-at="2026-10-25T10:08:24">Morning sample</button>
+          <button type="button" data-at="2026-10-25T21:42:37">Night sample</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Watch data</legend>
+        <label>Battery <output id="bat-v"></output><input type="range" id="bat" min="0" max="100"></label>
+        <label>Steps <output id="steps-v"></output><input type="range" id="steps" min="0" max="20000" step="10"></label>
+        <label class="check"><input type="checkbox" id="draco" checked> Draco traced in phosphor</label>
+        <label class="check"><input type="checkbox" id="guides"> Safe-radius guides</label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sky right now</legend>
+        <dl class="readout" id="readout"></dl>
+      </fieldset>
+
+      <fieldset>
+        <legend>Export</legend>
+        <div class="row">
+          <button type="button" id="dl-svg">Download SVG</button>
+          <button type="button" id="dl-png">Download PNG</button>
+        </div>
+      </fieldset>
+    </aside>
+  </main>
+
+  <script src="tokens.js"></script>
+  <script src="astro.js"></script>
+  <script src="stars.js"></script>
+  <script src="sky.js"></script>
+  <script src="dragon-data.js"></script>
+  <script src="font-data.js"></script>
+  <script src="face.js"></script>
+  <script src="galaxia.js"></script>
+  <script src="vault5.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

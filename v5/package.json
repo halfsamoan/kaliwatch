@@ -1,0 +1,13 @@
+{
+  "name": "kaliwatch-celestial-vault",
+  "version": "5.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "KALIWATCH v5 design studio: layered real-sky watch face design system (browser, offline). Watch Face Format port is a later step.",
+  "scripts": {
+    "start": "node serve.cjs",
+    "test": "node tools/test-astro.cjs",
+    "verify": "node tools/verify.cjs",
+    "gates": "node tools/gates.cjs"
+  }
+}

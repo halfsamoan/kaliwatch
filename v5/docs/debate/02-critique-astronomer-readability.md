@@ -1,0 +1,91 @@
+# Critique of "Seoul Planisphere" (astronomer seat) — lens: Wear OS reviewer, readability / AOD / burn-in / battery
+
+Score: **5 / 10**. Verdict: **the astronomy is correct to the pixel and the layer logic is right, but the materials are specified below the visibility floor of a 40 mm OLED, so as written the face would render as v4 plus a star map — still flat.** Every fatal item below is a value problem, not a structure problem; fix the values and this is the strongest proposal on the table.
+
+Method: I recomputed the sidereal/solar/lunar expressions by hand, rasterised the proposed AOD with the repo's own font, dragon path and QA method (non-black pixels over the 225 px disc), and checked each WFF claim against the official reference pages (sources at the end). Measurement page: `C:\Users\k\AppData\Local\Temp\claude\C--Users-k-Documents-ChatGPT-------KALIWATCH--claude-worktrees-aod-dragon-watchface-personalization-000e96\5441be5b-8cd1-47aa-a6c9-28637c7aeb8f\scratchpad\debate\_aod_v5_measure.html` (built by `_aod_v5_measure.build.cjs` next to it).
+
+## The five mandatory questions
+
+### 1. Can HH:MM be read in under one second at 40 mm with that sky behind it?
+**Active: yes. AOD: yes, except when the moon is up and high — then no, for the digit it sits behind.**
+
+- Active: digits #EFF8EC (relative luminance 93 %) at 78 px / weight 600, stem ~10 px, over a 72 % black plate. Worst case behind a glyph: a tier-A star (2.8 px, #C9D6D2 = 65 %) through the plate = 18 % spark, contrast 4.1:1 on a 2.8 px spot; average background 0.1–1.5 %, contrast > 14:1. The moon through the plate is a 22 px disc at ~21 % — a smudge, not a legibility failure. Sun corona through the plate 11 % warm bloom. Pass.
+- AOD: there is no plate. Outline digits are a 1.4 px stroke of #91AD80 (37.5 % luminance). The proposal keeps the moon at alpha 110 as a 22 px disc of #D9E2DE = **32 % luminance**. Contrast of stroke over moon = 1.17:1. Where the disc overlaps a digit, that part of the outline vanishes. When does that happen? Moon dec ≥ ~+20° (about one week per month, the winter full moons and the summer new-moon weeks): path x = 225 + d·sin H, y = 138 + d·cos H with d = 2(90 − dec) ≈ 124–140 px; it passes through the hour-digit box (x 118–214, y 195–252) for H ≈ −63°…−23° and through the minute box (x 236–332) for H ≈ +23°…+63° — roughly 2.7 h behind each digit, 5+ h per night, all of it AOD time. Fail for those hours. Fix F3.
+
+### 2. Any text under ~11 px treated as information?
+- 10 px constellation labels: declared texture — acceptable, they rotate and are 35 % alpha.
+- 10 px shoulder inscriptions `37.57N 126.98E` and `SIDEREAL hh:mm`: declared decoration — acceptable, but note that this makes the sidereal layer's only numeric readout unreadable, which is fine for an instrument (the Galaxia does not label sidereal time either).
+- 11 px F1 numerals `06/12/18`: exactly at the floor; they are an instrument scale read by pointer position, acceptable — but they collide with the pointer and the day arc (see F6).
+- **14 px telemetry row `SEC 24  BAT 78%  STP 6,240`: this is battery and steps, which the brief names as information, demoted from 27 px to 14 px (cap height ≈ 10 px ≈ 0.9 mm at 40 mm).** Not a hard-constraint breach (14 > 11) but a hierarchy regression that the owner will notice first. Fix F4.
+- 8 px zodiac glyphs on the ecliptic: decoration, but 0.7 mm glyphs will be mush; drop the glyphs, keep the 3 px ticks.
+
+### 3. AOD under 15 % lit with no per-second motion?
+**Yes — measured.** Rasterised at native 450 px with the repo's embedded Roboto Mono and official dragon path, disc = 159,068 px:
+
+| scene | lit (any non-black) | lit > 8/255 | mean luminance |
+|---|---|---|---|
+| v4 `face.js` ambient (calibration) | 8.43 % | 7.90 % | 0.68 % |
+| v5 AOD as specified (outline digits, rim, 12 ticks, 4 arcs, 25 visible star dots, Draco, date, BAT, INFINITY, dim dragon) | **8.66 %** | 8.13 % | 0.67 % |
+| v5 AOD + moon dot (22 px, alpha 110) | 8.89 % | 8.36 % | 0.70 % |
+| v5 AOD with WFF substitute digits Roboto Mono LIGHT (300) filled #91AD80 | 6.65 % | 6.19 % | 0.88 % |
+| rim circle alone (1 px, r 150) | 1.06 % | | |
+| star dots + Draco alone | 0.34 % | | |
+
+The repo's "11.3 %" for v4 came from a 900→450 downsample that counts anti-aliased edges; by that method v5 lands at ≈ 11.6–11.9 %, which matches the proposal's own estimate. Under 15 % by either method. Per-second motion: none — the vault, arcs and moon are driven by `[HOUR_0_23_MINUTE]` (a v1 float, verified), so ambient repaints once a minute as the platform does anyway. Pass.
+
+### 4. Burn-in from static bright rings?
+**No.** Active: F1/F2/F3 rings are 1–7 % luminance; the only bright ring element is the seconds trail (sweeps) and the gold sun pointer (48 % luminance, 9 px, drifts 0.77 px/min at r 177). AOD: rim circle 1 px #3A4A3F = 6 % static (negligible); 12 ticks #7F9472 = 27 % static but ~100 px² total (same as v4); 4 arcs #4D633F = 11 % and drift 0.84 px/min; star dots drift. The static elements at > 20 % are the same ones v4 already has: outline digits (37.5 %, stroke only) and the dim dragon (#718D61 @85 % ≈ 20 %, 1,596 px² of ink). Pass, no regression.
+
+### 5. Anything that loops or twinkles?
+**No.** The only self-driven motion is the sky at 0.25°/min and the seconds trail/marker/`SEC nn` once per second in Active. Wake and sleep transitions are one-shot `Variant` animations (durations are fractions of the device's transition, verified: `duration`/`startOffset` are 0.0–1.0, and `duration` is "starting with version 4"). Pass.
+
+## FATAL (would still read as flat, or cannot be built as written)
+
+**FATAL 1 — Every "material" is specified below the perceptual floor; the two occlusion chains that are supposed to carry depth are invisible.**
+Relative luminances of the specified values: vault base #04070A = 0.2 %; dome field #0C110E→#05070A = 0.5→0.2 %; F1 opaline #151C18 = 1.0 %; F3 #0A0D0B = 0.3 %; Milky Way #19232A = 1.6 %, core #263238 = 3.0 %; bezel/F1 highlights #2A352D/#2A352E = 3.2 % at 1–1.5 px; wall highlight #3E4F45 = 7 % at 4 px; plate top/left edge #3C4A41 @60 % ≈ 3.8 %, bottom/right edge #000 on a 0.2 % field = nothing. On a Watch6 Classic at 200–300 nits these all render as black. Consequences:
+- The plate drop shadow (60 % black, +3/+4, blur 8) lands on a 0.2 % surface: a 0.1 % step. The "height cue" of Z7 does not exist except where it crosses a star or the Milky Way core (3 % → 1.3 %). The plate therefore has no visible edge and no shadow — it is an invisible rectangle whose only trace is dimmed stars, i.e. a smudge, not an object.
+- The dome's 12 px inner shadow onto the vault likewise falls on 0.2 % and is invisible; the 4 px wall highlight at 7 % is a faint grey hairline, so the aperture reads as a drawn circle, not a hole. The proposal's own Risk 2 says the wall must be ≥ 35 % luminance or "the whole depth claim fails" — and then specifies 7 %. Risk 11 says "do not start subtle" — and the spec is subtle everywhere.
+- What survives at 40 mm: black field, white digits, green dragon and seconds, gold sun, stars. That is v4 with a better star map. The user's objection ("one-dimensional") returns.
+Required fix: lift the whole material scale so each cue has at least a 3–5 % luminance step against its neighbour: vault base ≈ #1A2226 (4 %) as a true grisaille slate, Milky Way 10 / 14 / 18 %; dome field 7 % with a 12–14 % lit upper-left zone; wall highlight ≥ 30 % (#8E9E96) over a 60° lower-right sector tapering to 10 %, wall shadow side true black; plate 78–80 % black so the digit background stays ≤ 1 % (contrast still > 15:1); plate shadow 80 % black, visible as a 3 % step; plate top/left edge 1.5 px at ≥ 25 %. Then prove it: render the Active PNG and view it downsampled to 150 px (the 40 mm equivalent); the bevel, the shadow and the plate edge must each be identifiable in that thumbnail. AOD is unaffected (vault_aod stays black).
+
+**FATAL 2 — The dragon bbox in the proposal is wrong, and two layout collisions follow from the real geometry.**
+Measured from the untouched official path in the proposed frame (x 135, y 14, 180×123, viewBox 5 22 126 94, aspect-fit scale 1.3085): path bbox x 143–306, y 13–134; ink at ≥ 50 % alpha x 151–305, y 13–129; 1,596 px² of ink, 455 px² inside the aperture, 585 px² at r > 186 (over F1/F2/F3). The proposal assumed x 166–285, y 47–126.
+- Good news: zero ink within 15 px of the pole; the lowest ink in the pole column (x 215–235) is y 85, so Polaris at (225,138) is 53 px clear, not 12. The "lower coil crosses the rim" claim holds (ink down to y 129 inside the r 150 aperture).
+- Bad news: the dragon's top is at y 13 = r 212, so it covers F1, F2 and F3 across x 151–305 at 12 o'clock. Fine for the omitted `00` numeral, but the sun pointer (Z5 < Z11) disappears behind the dragon for ≈ 3 h around solar midnight and the seconds marker at r 192 for ≈ 8 s per minute. v4 had the same marker occlusion, so I will not call that a regression — but the proposal's Section 4 safe-area table must be rebuilt from the measured bbox, not the guessed one.
+- The 13 px prompt `kali@orbit:~$ INFINITY` is 172 px wide (22 × 7.8 px), x 139–311 at y 364; the aperture half-width at y 364 is 56 px (x 169–281), so both ends cross the bevel wall and land on the shoulder at r ≈ 163, angles 148° and 212° — **exactly on the two TextCircular inscriptions (125–160° and 200–235° at r 160).** Three text runs overlapping on a 12 px wide ring. Must be fixed (F5).
+
+**FATAL 3 — For the five months the sun is high, the proposal's own narrative is false: the sun does not "cross the lower window", it hides behind the time plate for up to ten hours a day.**
+Noon sun y = 138 + 2(90 − dec): June 271, equinox 318, December 365. The plate is y 170–294, so the noon sun is behind the plate for dec ≥ +11.5° (≈ 20 Apr – 23 Aug), and in June it stays behind the plate for |H| ≤ 76° ≈ 5 h either side of noon (x = 225 + 133·sin H stays inside 94–356). The "southern band y 296–374 where the sun travels" is a September-to-March statement. This is not a physics error — it is the inevitable consequence of putting the zenith under the plate — but the brief rejects wallpaper, and a sun that spends summer as a 28 % yellow blur under the minutes is wallpaper. Decide and document: either (a) make the summer sun a feature — bake the corona so it leaks from under the plate's bottom edge (the corona radius 28 px reaches y 299 from a June noon centre at 271; a warm 6 px rim under the slab is a genuine depth cue), raise the plate's bottom edge to y 266 so the leak is 30 px not 5 px, and move the telemetry row out from under the plate; or (b) shrink the plate to the HH:MM glyph box (x 108–342, y 184–266) so the plate covers the time only and the date/telemetry stand on the sky. Either is acceptable; silence is not.
+
+## Required FIXES (non-fatal, but the face does not ship without them)
+
+- **F1 — Use WFF `Outline`, not a Light-weight substitute.** `Font` accepts an `Outline` child (`color` required, `width` float default 2.0, introduced Wear OS 4, `color` transformable from v4). The v4 outline digits (#11200F fill, #91AD80 stroke 1.4) are therefore buildable as `<Font color="#ff11200F" ...><Outline color="#ff91AD80" width="1.4"/></Font>` — Risk 9 and the "re-measure with Light" note go away, and the wake "fill up" can even animate on the font `color`. If anyone still wants a filled substitute, the measurement says LIGHT (300) lights 2.14 % of the disc vs 4.17 % for the outline but at +58 % luminance; THIN (100) matches luminance (0.27 % vs 0.36 %) but its stem is ≈ 2.3 px = 0.2 mm, too thin.
+- **F2 — Hardcode UTC+9.** The face already hardcodes 37.57 N / 126.98 E; depending on `[TIMEZONE_OFFSET_MINUTES_DST]` (exists, integer, but WFF v3) buys nothing and adds a v3 dependency. `dU = dL − 0.375`.
+- **F3 — AOD moon.** Either draw the AOD moon as a 3 px dot like the stars (#5E6E68) or cap it at alpha 40 (≈ 12 % luminance) — never a 22 px disc at 32 % behind 37.5 % outline strokes. In Active, keep the disc but accept it as a 21 % smudge behind the digits, or raise the plate to 80 %.
+- **F4 — Telemetry hierarchy.** Drop `SEC nn` from the row (the trail already shows seconds); set `BAT 78%  STP 6,240` at 17 px (20 chars × 10.2 px = 204 px, fits the plate), baseline 288, plate bottom 300. Low-battery colour rule stays.
+- **F5 — Resolve the prompt/inscription collision.** Either shorten the prompt to `~$ INFINITY` (11 chars = 86 px, fits inside the aperture at y 364), or move the inscriptions to 240–275° and 85–120°. Also fix the date: baseline 186 inside a plate starting at 170 leaves a 3 px top margin; plate top 164 or date baseline 190.
+- **F6 — F1 ring collision.** Numerals at r 180 (glyph band r 174–186) sit on the pointer/day-arc radius 177; at the equinox the day arc's endpoints (90° and 270°) land exactly on `18` and `06`. Put the numerals at r 169 inside the ticks and move the ticks to r 182–186, or move the pointer/arc to r 184. Also add the word `SOLAR` to the ring, as the proposal itself requires in Risk 7.
+- **F7 — Guilloche.** 0.5 px radial lines at 0.5 px pitch on a bitmap that the renderer rescales ×1.067 will moiré into rings. Bake the dome at 480 px and use ≥ 1 px lines at ≥ 2 px pitch, or drop the guilloche and use a flat 1.5 % tone.
+- **F8 — Memory arithmetic.** The raw RGBA total is ≈ 5.9 MB (vault 2 × 1.05, dome 2 × 0.81, carriers 0.50 + 2 × 0.59, sun 0.15, shadow 0.18, dragon 2 × 0.09), not 3.9 MB. Irrelevant against the 100 MB interactive limit; the ambient set (vault_aod + dome_aod + dragon_aod + fonts ≈ 2–3 MB, less after the evaluator's transparent-pixel crop and RGB565 downsample) is well under the 10 MB ambient limit. Remove "memory" from the risk list; run the evaluator anyway.
+- **F9 — Validate off-canvas placement.** The vault `PartImage` at x −31, y −118 relies on negative coordinates being accepted by the validator. Not confirmed in the reference; if refused, wrap it in a 450×450 `Group` and verify, or crop the vault to 480×480 about P (x −15, y −102 — still negative) and test that.
+- **F10 — Seconds origin vs fixed ticks.** With the trail origin at A_v the 60 F2 ticks stop meaning anything (the trail no longer starts at a tick). Either accept and document the ticks as texture, or keep the origin at 12 o'clock and let only the AOD arcs drift.
+- **F11 — `Reference` wording.** WFF has no global named-expression declaration; "declare once" means exposing a hidden element's transformed attribute through `Reference` and reading `[REFERENCE.name]`. Say so, and expect to repeat the LST expression in the Condition blocks that cannot read a Reference.
+
+## KEEP (genuinely strong — do not let the debate sand these off)
+
+- **The sky is real and the maths is right.** I recomputed GMST at 2026-01-01 00:00 UT = 100.66°, the day-count expression (correct through 2099), LST for 2026-10-25 10:08:24 KST = 177.52° and 19:31:08 KST = 318.5°, and the sample positions: Eltanin (148,136), Vega (125,117), Capella (312,125), Dubhe (251,88), sun (116,313), all match within 1 px. The EoT and declination formulae give +16.3 min and −13.0° for 25 Oct (actual +16.0 / −12.2). This is the first KALIWATCH proposal where the decoration is true.
+- **Polar azimuthal equidistant with the pole off-centre and a circular aperture.** This is the right projection (rigid rotation = one `Transform angle` on one bitmap) and the off-centre window is a clever approximation of a planisphere's horizon mask: altitude ≥ 6° N / 24° S / 26° E-W, so nothing below the Seoul horizon is ever shown. Keep P = (225,138), s = 2 px/deg, aperture r 150.
+- **The sun layer under the dome.** Letting the dome bitmap hide the sun below the horizon automatically, with a sun pointer on F1 as the second, always-visible reading, is exactly how the Galaxia distributes the same information across two heights.
+- **Sidereal drift in AOD.** The arcs and star dots moving 0.7–0.8 px/min is free burn-in protection and the only AOD on the table that is not static.
+- **Palette discipline.** One warm colour (gold = sun, and only the sun), one cool neutral (grisaille silver), phosphor for the KALI signature only. Keep the rule, lift the values (FATAL 1).
+- **Draco in phosphor under the Kali dragon.** The only colour on the vault, the only conceptual bridge to the JLC Dragon edition, and it costs nothing.
+- **The wake choreography back-to-front** (vault → dome settle → sun/moon → plate lift + digit fill → flange → dragon last) maps cleanly onto `Variant startOffset/duration` fractions, and the measured transition order survives even though the milliseconds will not.
+- **HH:MM untouched**: 166 / 284, baseline 252, 78 px, never moves, never scales, nothing ever in front of it.
+
+## Verification log
+
+- Sidereal/solar/lunar expressions recomputed by hand (IAU 1982 GMST form, 360.98564736629°/day, J2000 offset 9496.5 d). All sample moments reproduced.
+- Dragon bbox: path flattener over the untouched `dragon-data.js` (`dragon-bbox.cjs`), plus a thresholded raster mask (`_aod_v5_measure.html`, scene `dragon_mask`).
+- AOD lit pixels: SVG→canvas raster at 450 px, repo font embedded, 13 scenes (table above).
+- WFF reference pages checked: `Variant` (targets = any transformable attribute; `duration` from version 4; durations are 0.0–1.0 fractions), `Arc` (`startAngle`/`endAngle`/`centerX`/`centerY`/`width`/`height` transformable), `PartImage` (`x`/`y`/`width`/`height`/`pivotX`/`pivotY`/`angle`/`alpha`/`scaleX`/`scaleY` transformable, `tintColor` from v4), `SourceType` (`HOUR_0_23_MINUTE` float v1; `TIMEZONE_OFFSET_MINUTES_DST` integer v3; `TIMEZONE_OFFSET_DST` is a string; `MOON_PHASE_TYPE` 0–7 as the proposal assumes; `STEP_GOAL` ≥ 1000; `YEAR` clamped 1902–2100), arithmetic expression (sin/cos/tan/asin/acos/atan/rad/deg/clamp/floor/round/numberFormat, ternary; numeric type stated only as "floating-point" — the float32 risk stays unverified either way), `Font` (`Outline`, `OutGlow`, `Shadow` children; weights THIN 100 … EXTRA_BLACK 1000), `Outline` (color, width, Wear OS 4), memory (10 MB ambient / 100 MB interactive, transparent crop, RGB565 downsample).
+- Not verified: negative `PartImage` coordinates in the validator; the engine's numeric precision; on-device luminance of 1.4–2.8 px stars on the PenTile panel.
